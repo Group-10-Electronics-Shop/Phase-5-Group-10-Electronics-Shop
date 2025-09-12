@@ -1,21 +1,14 @@
-import { useSelector } from "react-redux";
-
-function Profile() {
-  const { user } = useSelector((state) => state.auth);
-
+export default function Profile() {
   return (
-    <div className="max-w-md mx-auto bg-white p-6 shadow rounded">
-      <h2 className="text-xl font-bold mb-4">Profile</h2>
-      {user ? (
-        <div>
-          <p><strong>Name:</strong> {user.name}</p>
-          <p><strong>Email:</strong> {user.email}</p>
-        </div>
-      ) : (
-        <p>No user data.</p>
-      )}
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">My Profile</h1>
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <p><span className="font-semibold">Name:</span> John Doe</p>
+        <p><span className="font-semibold">Email:</span> johndoe@example.com</p>
+        <button className="mt-4 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+          Logout
+        </button>
+      </div>
     </div>
   );
 }
-
-export default Profile;

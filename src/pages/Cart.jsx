@@ -1,25 +1,10 @@
-import { useSelector } from "react-redux";
-
-function Cart() {
-  const items = useSelector((state) => state.cart.items);
-
+export default function Cart() {
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-4">Cart</h2>
-      {items.length === 0 ? (
-        <p>Your cart is empty.</p>
-      ) : (
-        <ul className="space-y-2">
-          {items.map((item) => (
-            <li key={item.id} className="flex justify-between border-b pb-2">
-              <span>{item.name}</span>
-              <span>${item.price}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Your Cart</h1>
+      <div className="bg-white shadow-md rounded-lg p-4">
+        <p className="text-gray-500">Your cart is empty.</p>
+      </div>
     </div>
   );
 }
-
-export default Cart;
