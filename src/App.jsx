@@ -1,16 +1,40 @@
-import React from "react";
+import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Profile from "./pages/Profile";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import Orders from "./pages/Orders";
+import ProductDetails from "./pages/ProductDetails";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <div className="p-6">
-        <h1 className="text-3xl font-bold text-blue-600">Electronics Shop</h1>
-        <p className="mt-2 text-gray-700">
-          Welcome to our online electronics store. 🚀
-        </p>
-      </div>
+      <main className="flex-grow container mx-auto px-4 py-6">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/products/:id" element={<ProductDetails />} />
+        </Routes>
+      </main>
+      <Footer />
     </div>
   );
 }
