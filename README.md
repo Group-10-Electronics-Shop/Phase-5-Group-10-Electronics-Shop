@@ -1,16 +1,17 @@
-<<<<<<< HEAD
 # Phase-5-Group-10-Electronics-Shop
-=======
-# React + Vite
+📂 Project Structure
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
->>>>>>> fabfc1b (Frontend setup with Vite, React, Tailwind, base structure)
+electronics-shop-frontend/
+├── index.html
+├── package.json
+├── postcss.config.js
+├── tailwind.config.js
+├── vite.config.js
+├── public/
+│   └── vite.svg
+└── src/
+    ├── App.jsx
+    ├── index.css
+    ├── main.jsx
+    └── components/
+        └── Navbar.jsx
