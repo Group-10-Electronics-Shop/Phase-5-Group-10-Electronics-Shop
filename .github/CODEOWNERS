@@ -1,1 +1,18 @@
-@mikemarvel-stack @BrianOduory
+# Code owners for Group-10 Electronics Shop
+/docs/ @mikemarvel-stack
+
+# Frontend ownership
+src/ @mikemarvel-stack
+client/ @mikemarvel-stack
+
+# Backend ownership
+server/ @BrianOduory
+
+# CI / workflows / deployments
+.github/workflows/ @emmahgicheru @dennis-kibz
+
+# Tests
+tests/ @emmahgicheru
+
+# default fallback
+* @emmahgicheru @mikemarvel-stack @BrianOduory @dennis-kibz
