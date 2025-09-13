@@ -3,9 +3,12 @@ import { Link } from "react-router-dom";
 export default function Products() {
   // Later, fetch products from Redux / API
   const products = [
-    { id: 1, name: "Laptop", price: "$1000" },
-    { id: 2, name: "Smartphone", price: "$700" },
-    { id: 3, name: "Headphones", price: "$150" },
+    { id: 1, name: "Laptop", price: "KSH17,000" },
+    { id: 2, name: "Smartphone", price: "12,000" },
+    { id: 3, name: "Headphones", price: "KSH15,000" },
+    { id: 4, name: "Smartwatch", price: "KSH8,000" },
+    { id: 5, name: "Tablet", price: "KSH20,000" },
+    { id: 6, name: "Camera", price: "KSH25,000" },
   ];
 
   return (
