@@ -22,20 +22,27 @@ It provides the base React + Vite structure to build the user interface of the e
 ---
 4. Run the development server
 -npm run dev
+---
+By default, the app will be available at:
+👉 http://localhost:5173
 
+---
 📂 Project Structure
-
+```
 electronics-shop-frontend/
-├── index.html
-├── package.json
-├── postcss.config.js
-├── tailwind.config.js
-├── vite.config.js
-├── public/
-│   └── vite.svg
-└── src/
-    ├── App.jsx
-    ├── index.css
-    ├── main.jsx
-    └── components/
-        └── Navbar.jsx
+│── public/          # Static assets
+│── src/             # Application source code
+│   ├── assets/      # Images, icons, etc.
+│   ├── components/  # Reusable UI components
+│   ├── pages/       # Page-level components
+│   ├── App.jsx      # Root component
+│   └── main.jsx     # Entry point
+│── .gitignore
+│── package.json
+│── vite.config.js
+└── README.md
+```
+---
+🧑‍💻 Author
+
+Electronics Shop Dev Team

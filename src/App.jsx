@@ -7,6 +7,7 @@ import Checkout from "./pages/Checkout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import Footer from "./components/Footer";
 
 function Navbar() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </div>
+      <Footer /> {/* ✅ Now the footer is rendered */}
     </div>
   );
 }
