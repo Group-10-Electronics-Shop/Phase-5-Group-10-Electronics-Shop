@@ -1,0 +1,91 @@
+name: Deploy - main
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    name: build-and-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          python -V || true
+          node -v || true
+
+      - name: Run DB migrations (if DATABASE_URL set)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -n "${DATABASE_URL:-}" ]; then
+            python -m pip install --upgrade pip
+            pip install alembic || true
+            if [ -f alembic.ini ]; then
+              alembic upgrade head || echo "alembic upgrade failed"
+            else
+              echo "No alembic.ini - skipping alembic"
+            fi
+          else
+            echo "DATABASE_URL not configured - skipping migrations"
+          fi
+
+      - name: Build frontend (if client exists)
+        run: |
+          if [ -d client ] || [ -f client/package.json ]; then
+            echo "Building frontend"
+            cd client
+            npm ci || npm install
+            npm run build || echo "No build script — make sure build output is in client/ or adjust step"
+            cd -
+          else
+            echo "No client folder - skipping frontend build"
+          fi
+
+      - name: Deploy frontend (Netlify) - run only if NETLIFY secrets present
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          if [ -n "${NETLIFY_AUTH_TOKEN:-}" ] && [ -n "${NETLIFY_SITE_ID:-}" ]; then
+            echo "Deploying frontend to Netlify site ${NETLIFY_SITE_ID}"
+            npm install -g netlify-cli
+            netlify deploy --dir=client --site="${NETLIFY_SITE_ID}" --prod || { echo "Netlify deploy failed"; exit 1; }
+          else
+            echo "Netlify secrets missing - skipped frontend deploy"
+          fi
+
+      - name: Trigger backend deploy (Render) - run only if RENDER secrets present
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          if [ -n "${RENDER_API_KEY:-}" ] && [ -n "${RENDER_SERVICE_ID:-}" ]; then
+            echo "Triggering Render deploy for service ${RENDER_SERVICE_ID}"
+            curl -s -X POST "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
+              -H "Authorization: Bearer ${RENDER_API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d '{"clearCache": true}' -o /dev/null -w "%{http_code}\n" || true
+          else
+            echo "Render secrets missing - skipped backend deploy"
+          fi
+
+      - name: Wait a bit for services to come up (if URLs provided)
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+        run: |
+          sleep 10
+          echo "Proceeding to smoke tests (smoke tests will fail if BACKEND_URL/FRONTEND_URL are missing)"
+
+      - name: Run smoke tests (fail if BACKEND/FRONTEND not set)
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+        run: |
+          if [ -z "${BACKEND_URL:-}" ] || [ -z "${FRONTEND_URL:-}" ]; then
+            echo "BACKEND_URL or FRONTEND_URL missing — failing pipeline"
+            exit 1
+          fi
+          bash scripts/smoke_test.sh

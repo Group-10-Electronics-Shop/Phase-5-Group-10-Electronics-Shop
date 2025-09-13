@@ -1,0 +1,28 @@
+# python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# virtualenvs
+server/.venv/
+venv/
+.env
+.env.*.local
+
+# editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# server artifacts
+server/server.log
+server/server.pid
+
+# node / build artifacts if any
+node_modules/
+dist/
+build/
+
+docs/actions-screenshot.png
