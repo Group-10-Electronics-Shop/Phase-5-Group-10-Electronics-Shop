@@ -13,15 +13,15 @@ export default function Home() {
         />
         {/* Overlay with text + button */}
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-40 text-white text-center px-4">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold animate-fadeIn">
             Welcome to Electronics Shop
           </h1>
-          <p className="mt-2 text-sm sm:text-base md:text-lg lg:text-xl">
+          <p className="mt-2 text-sm sm:text-base md:text-lg lg:text-xl animate-fadeIn delay-200">
             Best Deals on Electronics
           </p>
           <Link
             to="/products"
-            className="mt-4 px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 bg-blue-600 hover:bg-blue-700 text-sm sm:text-base md:text-lg lg:text-xl font-semibold rounded-lg shadow-md transition"
+            className="mt-4 px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 bg-blue-600 hover:bg-blue-700 text-sm sm:text-base md:text-lg lg:text-xl font-semibold rounded-lg shadow-md transition transform hover:scale-105"
           >
             Shop Now
           </Link>
@@ -33,23 +33,24 @@ export default function Home() {
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-6">
           Explore Our Categories
         </h2>
-        <p className="text-center text-gray-600 text-sm sm:text-base md:text-lg">
+        <p className="text-center text-gray-600 text-sm sm:text-base md:text-lg mb-8">
           Explore our latest products and enjoy the best deals.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8">
-          <div className="bg-white shadow-md rounded-lg p-4 text-center">
-            <h3 className="text-lg font-semibold">Smartphones</h3>
-            <p className="text-gray-500">Latest models available</p>
-          </div>
-          <div className="bg-white shadow-md rounded-lg p-4 text-center">
-            <h3 className="text-lg font-semibold">Laptops</h3>
-            <p className="text-gray-500">Work & Gaming laptops</p>
-          </div>
-          <div className="bg-white shadow-md rounded-lg p-4 text-center">
-            <h3 className="text-lg font-semibold">Accessories</h3>
-            <p className="text-gray-500">Headphones, chargers & more</p>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {[
+            { title: "Smartphones", desc: "Latest models available" },
+            { title: "Laptops", desc: "Work & Gaming laptops" },
+            { title: "Accessories", desc: "Headphones, chargers & more" },
+          ].map((cat, idx) => (
+            <div
+              key={idx}
+              className="bg-white shadow-md rounded-lg p-6 text-center hover:shadow-xl hover:scale-105 transform transition-all duration-300"
+            >
+              <h3 className="text-lg font-semibold mb-2">{cat.title}</h3>
+              <p className="text-gray-500">{cat.desc}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
