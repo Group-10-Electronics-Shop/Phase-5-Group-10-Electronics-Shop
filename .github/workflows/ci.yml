@@ -1,0 +1,53 @@
+name: CI - PR checks
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  frontend-check:
+    name: frontend-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check frontend presence
+        run: |
+          if [ -d client ] || [ -f client/index.html ]; then
+            echo "frontend present"
+          else
+            echo "No frontend; skipping frontend checks"
+          fi
+
+  backend-check:
+    name: backend-check
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready --health-interval=10s --health-timeout=5s --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install backend deps if present
+        run: |
+          if [ -f server/requirements.txt ]; then
+            python -m pip install --upgrade pip
+            pip install -r server/requirements.txt
+          else
+            echo "No server/requirements.txt found; skipping install"
+          fi
+      - name: Backend sanity import (if present)
+        run: |
+          if [ -f server/app.py ]; then
+            python -c "import sys; sys.path.append('server'); import app; print('import OK')"
+          else
+            echo "No server/app.py; skipping import check"
+          fi

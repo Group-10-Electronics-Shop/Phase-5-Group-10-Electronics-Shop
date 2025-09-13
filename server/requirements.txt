@@ -1,0 +1,15 @@
+Flask
+Flask-JWT-Extended
+Flask-Migrate
+Flask-SQLAlchemy
+SQLAlchemy
+psycopg2-binary
+alembic
+python-dotenv
+marshmallow
+marshmallow-sqlalchemy
+Flask-CORS
+gunicorn
+requests
+pytest
+pytest-flask
