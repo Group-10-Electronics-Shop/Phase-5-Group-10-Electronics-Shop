@@ -36,7 +36,6 @@ class User:
         cursor = conn.cursor()
         
         try:
-            # Check if user already exists
             cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
             if cursor.fetchone():
                 raise ValueError("Email already exists")
