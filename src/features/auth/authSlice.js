@@ -1,24 +1,55 @@
-import { createSlice } from "@reduxjs/toolkit";
+// src/features/auth/authSlice.js
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
-const initialState = {
-  user: null,
-};
+// Mock login API
+export const loginUser = createAsyncThunk(
+  "auth/loginUser",
+  async ({ email, password }) => {
+    // Simulate API call
+    return { id: 1, name: "John Doe", email };
+  }
+);
+
+// Mock register API
+export const registerUser = createAsyncThunk(
+  "auth/registerUser",
+  async ({ name, email, password }) => {
+    // Simulate API call
+    return { id: 2, name, email };
+  }
+);
 
 const authSlice = createSlice({
   name: "auth",
-  initialState,
+  initialState: {
+    user: null,
+    status: "idle",
+    error: null,
+  },
   reducers: {
-    login: (state, action) => {
-      state.user = action.payload;
-    },
-    registerUser: (state, action) => {
-      state.user = action.payload;
-    },
     logout: (state) => {
       state.user = null;
     },
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(loginUser.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.user = action.payload;
+      })
+      .addCase(loginUser.rejected, (state) => {
+        state.status = "failed";
+        state.error = "Login failed";
+      })
+      .addCase(registerUser.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.user = action.payload;
+      });
+  },
 });
 
-export const { login, registerUser, logout } = authSlice.actions;
+export const { logout } = authSlice.actions;
 export default authSlice.reducer;
