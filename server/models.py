@@ -39,8 +39,7 @@ class User:
             cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
             if cursor.fetchone():
                 raise ValueError("Email already exists")
-            
-            # Hash password and create user
+           
             password_hash = hash_password(password)
             cursor.execute("""
                 INSERT INTO users (name, email, password_hash, role)
