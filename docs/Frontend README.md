@@ -73,15 +73,13 @@ npm run dev
 ---
 ## 🖼️ Screenshots  
 
-![Home](./assets/Home.png)
+![Home](./public/Home.png)
 
+![Cart](./public/Cart.png)
 
-![Cart](./assets/Cart.png)
+![Products](./public/Products.png)
 
-![Products](./assets/Products.png)
-
-![Checkout](./assets/Checkout.png)
-
+![Checkout](./public/Checkout.png)
 
 ---
 ## 🧩 Project Structure
