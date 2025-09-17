@@ -1,8 +1,5 @@
 # Phase-5-Group-10 Electronics Shop – Frontend
 
-![Home Banner](src/assets/home-banner.jpg)  
-
-
 ## 🛒 Overview
 This is the **frontend** for the Electronics Shop project, built with **React + Redux + Vite + Tailwind CSS**.  
 It provides a fully interactive e-commerce interface for browsing, searching, and purchasing electronics, including category filters, product details, cart, wishlist, and checkout with multiple payment methods.
@@ -73,6 +70,18 @@ npm install
 npm run dev
 ```
 #### Open the app at http://localhost:5173/
+---
+## 🖼️ Screenshots  
+
+![Home](./assets/Home.png)
+
+
+![Cart](./assets/Cart.png)
+
+![Products](./assets/Products.png)
+
+![Checkout](./assets/Checkout.png)
+
 
 ---
 ## 🧩 Project Structure
