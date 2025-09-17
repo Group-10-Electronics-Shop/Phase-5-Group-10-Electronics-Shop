@@ -4,7 +4,6 @@ import bcrypt
 from datetime import datetime
 import os
 
-# Database connection pool
 connection_pool = None
 
 def init_db(database_url):
