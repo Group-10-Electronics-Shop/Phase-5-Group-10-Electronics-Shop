@@ -26,7 +26,6 @@ def get_db_connection():
         )
     return connection_pool
 
-# User model and password helpers
 class User:
     """User model with specified fields: id, name, email, role, created_at"""
     
