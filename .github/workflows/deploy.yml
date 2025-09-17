@@ -79,9 +79,18 @@ jobs:
           sleep 10
           echo "Proceeding to smoke tests (smoke tests will run only if BACKEND_URL & FRONTEND_URL secrets are set)"
 
-      # Run smoke tests only when both secrets are present
-      - name: Run smoke tests (only if BACKEND_URL & FRONTEND_URL secrets set)
-        if: ${{ secrets.BACKEND_URL != '' && secrets.FRONTEND_URL != '' }}
+      - id: check_urls
+        name: Check BACKEND_URL / FRONTEND_URL secrets
+        run: |
+          # Note: using secrets inside 'run' is allowed. We write an output to control following steps.
+          if [ -n "${{ secrets.BACKEND_URL }}" ] && [ -n "${{ secrets.FRONTEND_URL }}" ]; then
+            echo "run_smoke=true" >> $GITHUB_OUTPUT
+          else
+            echo "run_smoke=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run smoke tests
+        if: steps.check_urls.outputs.run_smoke == 'true'
         env:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
@@ -90,7 +99,7 @@ jobs:
           bash scripts/smoke_test.sh
 
       - name: Skip smoke tests (backstop when URLs not set)
-        if: ${{ secrets.BACKEND_URL == '' || secrets.FRONTEND_URL == '' }}
+        if: steps.check_urls.outputs.run_smoke == 'false'
         run: |
           echo "Skipping smoke tests because BACKEND_URL or FRONTEND_URL secret is missing."
           echo "Set these secrets in Settings → Secrets → Actions to enable smoke tests on deploy."
