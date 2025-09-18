@@ -1,17 +1,18 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
-import bcrypt
-from datetime import datetime
 import os
+from typing import Optional
 
 connection_pool = None
 
-def init_db(database_url):
-    """Initialize database connection"""
+def init_db(database_url: str) -> None:
+    """Initialize database connection and create tables"""
     global connection_pool
     try:
         connection_pool = psycopg2.connect(database_url, cursor_factory=RealDictCursor)
-        print("Database connection initialized successfully")
+        create_tables()
+        create_default_admin()
+        print("Database initialized successfully")
     except Exception as e:
         print(f"Database initialization error: {e}")
         raise e
@@ -20,83 +21,76 @@ def get_db_connection():
     """Get database connection"""
     global connection_pool
     if connection_pool.closed:
-        connection_pool = psycopg2.connect(
-            os.getenv('DATABASE_URL'), 
-            cursor_factory=RealDictCursor
-        )
+        database_url = os.getenv('DATABASE_URL', 'postgresql://username:password@localhost/electronics_shop')
+        connection_pool = psycopg2.connect(database_url, cursor_factory=RealDictCursor)
     return connection_pool
 
-class User:
-    """User model with specified fields: id, name, email, role, created_at"""
+def create_tables() -> None:
+    """Create users table"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
     
-    @staticmethod
-    def create(name, email, password, role='customer'):
-        """Create a new user"""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        try:
-            cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
-            if cursor.fetchone():
-                raise ValueError("Email already exists")
-           
-            password_hash = hash_password(password)
-            cursor.execute("""
-                INSERT INTO users (name, email, password_hash, role)
-                VALUES (%s, %s, %s, %s)
-                RETURNING id, name, email, role, created_at
-            """, (name, email, password_hash, role))
-            
-            user = cursor.fetchone()
-            conn.commit()
-            return dict(user)
-            
-        except Exception as e:
-            conn.rollback()
-            raise e
-        finally:
-            cursor.close()
-    
-    @staticmethod
-    def find_by_email(email):
-        """Find user by email"""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        try:
-            cursor.execute("""
-                SELECT id, name, email, password_hash, role, created_at
-                FROM users WHERE email = %s
-            """, (email,))
-            
-            user = cursor.fetchone()
-            return dict(user) if user else None
-            
-        finally:
-            cursor.close()
-    
-    @staticmethod
-    def find_by_id(user_id):
-        """Find user by ID"""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        try:
-            cursor.execute("""
-                SELECT id, name, email, role, created_at
-                FROM users WHERE id = %s
-            """, (user_id,))
-            
-            user = cursor.fetchone()
-            return dict(user) if user else None
-            
-        finally:
-            cursor.close()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(80) UNIQUE NOT NULL,
+            email VARCHAR(120) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            first_name VARCHAR(80) NOT NULL,
+            last_name VARCHAR(80) NOT NULL,
+            role VARCHAR(20) DEFAULT 'customer' CHECK (role IN ('customer', 'admin', 'staff')),
+            address TEXT,
+            phone VARCHAR(20),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+ 
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)")
+    conn.commit()
+    cursor.close()
 
-def hash_password(password):
-    """Hash a password using bcrypt"""
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+def create_default_admin() -> None:
+    """Create default admin user if it doesn't exist"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE username = 'admin' OR role = 'admin'")
+    if cursor.fetchone():
+        cursor.close()
+        return
+    
+    # I Imported here to avoid circular import
+    from models.user import User
+    
+    try:
+        admin_user = User.create(
+            username='admin',
+            email='admin@electronicsshop.com',
+            password='admin123',
+            first_name='Admin',
+            last_name='User',
+            role='admin'
+        )
+        print(f"Default admin user created: {admin_user.username}")
+    except Exception as e:
+        print(f"Admin user creation failed: {e}")
+    finally:
+        cursor.close()
 
-def verify_password(password, password_hash):
-    """Verify a password against its hash"""
-    return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
+def drop_tables() -> None:
+    """Drop all tables (for testing)"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("DROP TABLE IF EXISTS users CASCADE")
+    
+    conn.commit()
+    cursor.close()
+
+def reset_database() -> None:
+    """Reset database (for testing)"""
+    drop_tables()
+    create_tables()
+    create_default_admin()
