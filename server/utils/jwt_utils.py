@@ -1,102 +1,108 @@
-import jwt
-import os
-from datetime import datetime, timedelta
-from functools import wraps
-from flask import request, jsonify, current_app
+from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, get_jwt
+from datetime import timedelta
+from typing import Dict, Any, Optional
+from models.user import User
 
-def get_jwt_secret():
-    """Get JWT secret from environment"""
-    return os.getenv('JWT_SECRET', 'your-secret-key-change-in-production')
-
-def sign_jwt(user_id, role='customer', expires_in_hours=24):
-    """Sign JWT token with user information"""
-    try:
-        payload = {
-            'user_id': user_id,
-            'role': role,
-            'iat': datetime.utcnow(),
-            'exp': datetime.utcnow() + timedelta(hours=expires_in_hours)
+class JWTManager:
+    """JWT utility class for token management"""
+    
+    @staticmethod
+    def create_tokens(user: User) -> Dict[str, str]:
+        """Create access and refresh tokens for a user"""
+        additional_claims = {
+            'role': user.role,
+            'username': user.username,
+            'email': user.email
         }
         
-        token = jwt.encode(
-            payload,
-            get_jwt_secret(),
-            algorithm='HS256'
+        access_token = create_access_token(
+            identity=user.id,
+            additional_claims=additional_claims
         )
         
-        return token
-    except Exception as e:
-        raise Exception(f"Error signing JWT: {str(e)}")
-
-def verify_jwt(token):
-    """Verify and decode JWT token"""
-    try:
-        payload = jwt.decode(
-            token,
-            get_jwt_secret(),
-            algorithms=['HS256']
+        refresh_token = create_refresh_token(
+            identity=user.id,
+            additional_claims={'role': user.role}
         )
         
-        # Check if token is expired
-        exp = datetime.fromtimestamp(payload['exp'])
-        if datetime.utcnow() > exp:
-            raise jwt.ExpiredSignatureError('Token has expired')
+        return {
+            'access_token': access_token,
+            'refresh_token': refresh_token
+        }
+    
+    @staticmethod
+    def create_access_token_from_refresh(user_id: int) -> Optional[str]:
+        """Create new access token from refresh token"""
+        user = User.find_by_id(user_id)
+        if not user:
+            return None
         
-        return payload
-    except jwt.ExpiredSignatureError:
-        raise Exception('Token has expired')
-    except jwt.InvalidTokenError:
-        raise Exception('Invalid token')
-    except Exception as e:
-        raise Exception(f"Error verifying JWT: {str(e)}")
-
-def jwt_required(f):
-    """Decorator to protect routes with JWT authentication"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        token = None
+        additional_claims = {
+            'role': user.role,
+            'username': user.username,
+            'email': user.email
+        }
         
-        # Get token from Authorization header
-        auth_header = request.headers.get('Authorization')
-        if auth_header:
-            try:
-                # Expected format: "Bearer <token>"
-                token = auth_header.split(' ')[1]
-            except IndexError:
-                return jsonify({'error': 'Invalid authorization header format'}), 401
-        
-        if not token:
-            return jsonify({'error': 'No token provided'}), 401
-        
+        return create_access_token(
+            identity=user.id,
+            additional_claims=additional_claims
+        )
+    
+    @staticmethod
+    def get_current_user() -> Optional[User]:
+        """Get current user from JWT token"""
         try:
-            # Verify token
-            payload = verify_jwt(token)
-            
-            # Add user info to request context
-            request.current_user = {
-                'id': payload['user_id'],
-                'role': payload['role']
-            }
-            
-        except Exception as e:
-            return jsonify({'error': str(e)}), 401
-        
-        return f(*args, **kwargs)
+            user_id = get_jwt_identity()
+            if user_id:
+                return User.find_by_id(user_id)
+        except Exception:
+            return None
+        return None
     
-    return decorated_function
-
-def admin_required(f):
-    """Decorator to require admin role"""
-    @wraps(f)
-    @jwt_required
-    def decorated_function(*args, **kwargs):
-        if request.current_user['role'] != 'admin':
-            return jsonify({'error': 'Admin access required'}), 403
-        
-        return f(*args, **kwargs)
+    @staticmethod
+    def get_token_claims() -> Dict[str, Any]:
+        """Get claims from current JWT token"""
+        try:
+            return get_jwt()
+        except Exception:
+            return {}
     
-    return decorated_function
+    @staticmethod
+    def is_admin() -> bool:
+        """Check if current user is admin"""
+        claims = JWTManager.get_token_claims()
+        return claims.get('role') == 'admin'
+    
+    @staticmethod
+    def has_role(role: str) -> bool:
+        """Check if current user has specific role"""
+        claims = JWTManager.get_token_claims()
+        return claims.get('role') == role
+    
+    @staticmethod
+    def validate_token_user(user_id: int) -> bool:
+        """Validate that token belongs to specific user"""
+        token_user_id = get_jwt_identity()
+        return token_user_id == user_id
 
-def get_current_user():
-    """Get current user from request context"""
-    return getattr(request, 'current_user', None)
+def create_login_response(user: User) -> Dict[str, Any]:
+    """Create standardized login response"""
+    tokens = JWTManager.create_tokens(user)
+    
+    return {
+        'message': 'Login successful',
+        'user': user.to_dict(),
+        'access_token': tokens['access_token'],
+        'refresh_token': tokens['refresh_token']
+    }
+
+def create_register_response(user: User) -> Dict[str, Any]:
+    """Create standardized register response"""
+    tokens = JWTManager.create_tokens(user)
+    
+    return {
+        'message': 'User created successfully',
+        'user': user.to_dict(),
+        'access_token': tokens['access_token'],
+        'refresh_token': tokens['refresh_token']
+    }
