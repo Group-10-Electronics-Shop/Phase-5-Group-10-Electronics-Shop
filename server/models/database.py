@@ -60,7 +60,7 @@ def create_default_admin() -> None:
         cursor.close()
         return
     
-    # I Imported here to avoid circular import
+    # I Imported here to avoid circular imports
     from models.user import User
     
     try:
@@ -95,4 +95,4 @@ def reset_database() -> None:
     """Reset database (for testing)"""
     drop_tables()
     create_tables()
-    create_default_admin()
+    create_default_admin() 
