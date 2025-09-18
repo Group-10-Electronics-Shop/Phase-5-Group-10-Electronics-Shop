@@ -1,7 +1,6 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
-from typing import Optional
 
 connection_pool = None
 
@@ -20,7 +19,7 @@ def init_db(database_url: str) -> None:
 def get_db_connection():
     """Get database connection"""
     global connection_pool
-    if connection_pool.closed:
+    if not connection_pool or connection_pool.closed:
         database_url = os.getenv('DATABASE_URL', 'postgresql://username:password@localhost/electronics_shop')
         connection_pool = psycopg2.connect(database_url, cursor_factory=RealDictCursor)
     return connection_pool
@@ -73,7 +72,10 @@ def create_default_admin() -> None:
             last_name='User',
             role='admin'
         )
-        print(f"Default admin user created: {admin_user.username}")
+        if admin_user:
+            print(f"Default admin user created: {admin_user.username}")
+        else:
+            print("Failed to create default admin user")
     except Exception as e:
         print(f"Admin user creation failed: {e}")
     finally:

@@ -49,7 +49,7 @@ class User:
     @classmethod
     def create(cls, username: str, email: str, password: str, first_name: str, 
                last_name: str, address: Optional[str] = None, 
-               phone: Optional[str] = None, role: str = 'customer') -> 'User':
+               phone: Optional[str] = None, role: str = 'customer') -> Optional['User']:
         """Create a new user"""
         if not all([username, email, password, first_name, last_name]):
             raise ValueError("Missing required fields")
@@ -76,10 +76,17 @@ class User:
         """, (username, email, password_hash, first_name, last_name, role, address, phone))
         
         user_data = cursor.fetchone()
-        conn.commit()
+        if user_data:
+            columns = [desc[0] for desc in cursor.description] if cursor.description else []
+            user_data = dict(zip(columns, user_data)) if columns else None
+        if user_data:
+            columns = [desc[0] for desc in cursor.description] if cursor.description else []
+            user_data = dict(zip(columns, user_data)) if columns else None  # Convert tuple to dictionary
+            return cls(**{str(k): v for k, v in user_data.items()})
+        return None
         cursor.close()
         
-        return cls(**user_data)
+        return cls(**{str(k): v for k, v in user_data.items()})
     
     @classmethod
     def find_by_id(cls, user_id: int) -> Optional['User']:
@@ -130,7 +137,7 @@ class User:
         if not user:
             user = cls.find_by_email(username_or_email)
         
-        if user and cls.verify_password(password, user.password_hash):
+        if user and user.password_hash and cls.verify_password(password, user.password_hash):
             return user
         return None
     
@@ -178,7 +185,7 @@ class User:
     
     def change_password(self, current_password: str, new_password: str) -> None:
         """Change user password"""
-        if not self.verify_password(current_password, self.password_hash):
+        if not self.password_hash or not self.verify_password(current_password, self.password_hash):
             raise ValueError("Current password is incorrect")
         
         is_valid, message = self.validate_password(new_password)

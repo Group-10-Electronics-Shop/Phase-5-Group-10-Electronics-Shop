@@ -35,6 +35,9 @@ def register():
             role=data.get('role', 'customer')
         )
         
+        if not user:
+            return jsonify({'error': 'User creation failed'}), 500
+        
         response_data = create_register_response(user)
         return jsonify(response_data), 201
         
