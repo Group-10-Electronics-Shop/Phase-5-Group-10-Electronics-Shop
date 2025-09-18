@@ -23,7 +23,7 @@ def register():
                 'error': f'Missing required fields: {", ".join(missing_fields)}'
             }), 400
         
-        # Create user
+        # Creating user
         user = User.create(
             username=data['username'].strip(),
             email=data['email'].strip().lower(),
@@ -83,7 +83,7 @@ def refresh():
         if not user_id:
             return jsonify({'error': 'Invalid refresh token'}), 401
         
-        # Create new access token
+        # Creating new access token
         new_access_token = JWTManager.create_access_token_from_refresh(user_id)
         
         if not new_access_token:
@@ -129,7 +129,7 @@ def update_current_user():
         if not data:
             return jsonify({'error': 'Request body must be JSON'}), 400
         
-        # Update allowed fields
+        # Updating allowed fields
         allowed_fields = ['first_name', 'last_name', 'address', 'phone']
         update_data = {}
         
@@ -145,7 +145,7 @@ def update_current_user():
         if not update_data:
             return jsonify({'error': 'No valid fields to update'}), 400
         
-        # Update user profile
+        # Updating user profile
         user.update_profile(**update_data)
         
         return jsonify({

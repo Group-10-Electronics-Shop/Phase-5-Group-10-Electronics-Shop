@@ -41,7 +41,7 @@ def create_app():
     CORS(app, origins=['http://localhost:3000', 'https://your-frontend-domain.com'])
     jwt = JWTManager(app)
     
-    # Initialize database
+    # Initializing database
     init_db(app.config['DATABASE_URL'])
     
     # Register blueprints

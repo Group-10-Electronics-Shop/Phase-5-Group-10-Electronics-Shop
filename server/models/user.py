@@ -1,14 +1,17 @@
 import bcrypt
 from models.database import get_db_connection
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple, Union
 import re
 
 class User:
     """User model for handling user data and operations"""
     
-    def __init__(self, id=None, username=None, email=None, password_hash=None, 
-                 first_name=None, last_name=None, role='customer', address=None, 
-                 phone=None, created_at=None, updated_at=None):
+    def __init__(self, id: Optional[int] = None, username: Optional[str] = None, 
+                 email: Optional[str] = None, password_hash: Optional[str] = None, 
+                 first_name: Optional[str] = None, last_name: Optional[str] = None, 
+                 role: str = 'customer', address: Optional[str] = None, 
+                 phone: Optional[str] = None, created_at: Optional[Any] = None, 
+                 updated_at: Optional[Any] = None) -> None:
         self.id = id
         self.username = username
         self.email = email
@@ -28,7 +31,7 @@ class User:
         return re.match(pattern, email) is not None
     
     @staticmethod
-    def validate_password(password: str) -> tuple[bool, str]:
+    def validate_password(password: str) -> Tuple[bool, str]:
         """Validate password strength"""
         if len(password) < 6:
             return False, "Password must be at least 6 characters long"
@@ -49,8 +52,9 @@ class User:
     @classmethod
     def create(cls, username: str, email: str, password: str, first_name: str, 
                last_name: str, address: Optional[str] = None, 
-               phone: Optional[str] = None, role: str = 'customer') -> Optional['User']:
+               phone: Optional[str] = None, role: str = 'customer') -> 'User':
         """Create a new user"""
+        # Validate input
         if not all([username, email, password, first_name, last_name]):
             raise ValueError("Missing required fields")
         
@@ -61,9 +65,11 @@ class User:
         if not is_valid:
             raise ValueError(message)
         
+        # Check if user already exists
         if cls.find_by_username(username) or cls.find_by_email(email):
             raise ValueError("Username or email already exists")
         
+        # Hash password and create user
         password_hash = cls.hash_password(password)
         
         conn = get_db_connection()
@@ -76,17 +82,10 @@ class User:
         """, (username, email, password_hash, first_name, last_name, role, address, phone))
         
         user_data = cursor.fetchone()
-        if user_data:
-            columns = [desc[0] for desc in cursor.description] if cursor.description else []
-            user_data = dict(zip(columns, user_data)) if columns else None
-        if user_data:
-            columns = [desc[0] for desc in cursor.description] if cursor.description else []
-            user_data = dict(zip(columns, user_data)) if columns else None  # Convert tuple to dictionary
-            return cls(**{str(k): v for k, v in user_data.items()})
-        return None
+        conn.commit()
         cursor.close()
         
-        return cls(**{str(k): v for k, v in user_data.items()})
+        return cls(**dict(user_data))
     
     @classmethod
     def find_by_id(cls, user_id: int) -> Optional['User']:
@@ -99,7 +98,7 @@ class User:
         cursor.close()
         
         if user_data:
-            return cls(**user_data)
+            return cls(**dict(user_data))
         return None
     
     @classmethod
@@ -113,7 +112,7 @@ class User:
         cursor.close()
         
         if user_data:
-            return cls(**user_data)
+            return cls(**dict(user_data))
         return None
     
     @classmethod
@@ -127,12 +126,13 @@ class User:
         cursor.close()
         
         if user_data:
-            return cls(**user_data)
+            return cls(**dict(user_data))
         return None
     
     @classmethod
     def authenticate(cls, username_or_email: str, password: str) -> Optional['User']:
         """Authenticate user with username/email and password"""
+        # Try to find by username first, then by email
         user = cls.find_by_username(username_or_email)
         if not user:
             user = cls.find_by_email(username_or_email)
@@ -185,7 +185,10 @@ class User:
     
     def change_password(self, current_password: str, new_password: str) -> None:
         """Change user password"""
-        if not self.password_hash or not self.verify_password(current_password, self.password_hash):
+        if not self.password_hash:
+            raise ValueError("User has no password set")
+        
+        if not self.verify_password(current_password, self.password_hash):
             raise ValueError("Current password is incorrect")
         
         is_valid, message = self.validate_password(new_password)
@@ -227,5 +230,5 @@ class User:
         
         return data
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<User {self.username}>"
