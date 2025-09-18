@@ -59,6 +59,10 @@ def create_app():
     def internal_error(error):
         return {'error': 'Internal server error'}, 500
     
+    # Access the health_check endpoint to ensure it's functional
+    with app.test_request_context():
+        print(health_check())
+    
     return app
 >>>>>>> bbc4e9a (creates app.py)
 
