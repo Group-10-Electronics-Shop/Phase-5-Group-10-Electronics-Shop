@@ -1,3 +1,7 @@
+import { fetchProducts } from "../features/products/productSlice";
+import { placeOrder } from "../features/orders/orderSlice";
+
+
 function Orders() {
   return (
     <div>
