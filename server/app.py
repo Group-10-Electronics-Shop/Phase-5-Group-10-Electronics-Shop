@@ -1,10 +1,17 @@
 import os
 from flask import Flask, jsonify, request
 from datetime import datetime
+from flask_jwt_extended import JWTManager
+from dotenv import load_dotenv
 
 
 app = Flask(__name__)
 
+app.config["JWT_SECRET_KEY"] = os.getenv('ENV_JWT_SECRET_KEY')
+jwt = JWTManager(app)
+load_dotenv()
+
+                                         
 # Basic metadata (optional)
 START_TIME = datetime.utcnow().isoformat() + "Z"
 
