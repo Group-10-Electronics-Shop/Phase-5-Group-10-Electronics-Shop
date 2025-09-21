@@ -1,5 +1,5 @@
 import bcrypt
-from models.database import get_db_connection
+from server.models.database import get_db_connection
 from typing import Optional, Dict, Any, Tuple, Union
 import re
 

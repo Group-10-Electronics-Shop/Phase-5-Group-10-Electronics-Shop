@@ -1,72 +1,137 @@
-from flask import Flask
+import os
+from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from datetime import timedelta
-import os
-<<<<<<< HEAD
-from flask import Flask, jsonify, request
 from datetime import datetime
-from flask_jwt_extended import JWTManager
-=======
->>>>>>> bbc4e9a (creates app.py)
 from dotenv import load_dotenv
 
-# Import routes
-from routes.auth import auth_bp
-from models.database import init_db
-
+# Load environment variables FIRST, before creating the app
 load_dotenv()
 
-<<<<<<< HEAD
-app.config["JWT_SECRET_KEY"] = os.getenv('ENV_JWT_SECRET_KEY')
+# Initialize Flask app
+app = Flask(__name__)
+
+# Configure JWT
+app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY') or os.getenv('ENV_JWT_SECRET_KEY')
 jwt = JWTManager(app)
-load_dotenv()
 
-                                         
-# Basic metadata (optional)
+# Configure CORS
+CORS(app)
+
+# Start time for health check
 START_TIME = datetime.utcnow().isoformat() + "Z"
-=======
+
+
 def create_app():
+    """Application factory pattern."""
     app = Flask(__name__)
     
-    # Configuration
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
-    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
-    
-    # Database configuration
-    app.config['DATABASE_URL'] = os.getenv('DATABASE_URL', 'postgresql://username:password@localhost/electronics_shop')
+    # Load configuration
+    app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY') or os.getenv('ENV_JWT_SECRET_KEY')
     
     # Initialize extensions
-    CORS(app, origins=['http://localhost:3000', 'https://your-frontend-domain.com'])
     jwt = JWTManager(app)
+    CORS(app)
     
-    # Initializing database
-    init_db(app.config['DATABASE_URL'])
+    # Import db here to avoid circular imports
+    from models import db  # Adjust this import based on your project structure
     
-    # Register blueprints
-    app.register_blueprint(auth_bp, url_prefix='/api')
+    # Configure database
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL') or os.getenv('ENV_DATABASE_URL')
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
-    @app.route('/api/health')
-    def health_check():
-        return {'status': 'healthy', 'message': 'Electronics Shop Auth API is running'}
+    # Initialize database
+    db.init_app(app)
     
-    @app.errorhandler(404)
-    def not_found(error):
-        return {'error': 'Resource not found'}, 404
-    
-    @app.errorhandler(500)
-    def internal_error(error):
-        return {'error': 'Internal server error'}, 500
-    
-    # Access the health_check endpoint to ensure it's functional
-    with app.test_request_context():
-        print(health_check())
+    # Register routes
+    _register_public_routes(app, jwt, db)
     
     return app
->>>>>>> bbc4e9a (creates app.py)
 
-if __name__ == '__main__':
+
+def _register_public_routes(app, jwt, db):
+    """Register simple public/demo routes (health + sample products)."""
+    
+    @app.route("/health", methods=["GET"])
+    def health():
+        return jsonify({"status": "ok", "started_at": START_TIME}), 200
+
+    @app.route("/", methods=["GET"])
+    def index():
+        return jsonify({
+            'success': True,
+            'message': 'Welcome to the Electronics Shop API',
+            'version': '1.0.0',
+            'routes': {
+                'health': '/api/health',
+                'api_info': '/api',
+                'auth': '/api/auth/*',
+                'products': '/api/products/*',
+                'categories': '/api/categories/*',
+                'cart': '/api/cart/*',
+                'orders': '/api/orders/*',
+                'addresses': '/api/addresses/*',
+                'admin': '/api/admin/*'
+            }
+        })
+
+    # Error handlers
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify(success=False, message="Resource not found", error="Not Found"), 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        return jsonify(success=False, message="Internal server error", error="Internal Server Error"), 500
+
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify(success=False, message="Bad request", error="Bad Request"), 400
+
+    # JWT error handlers
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        return jsonify(success=False, message="Token has expired", error="Token Expired"), 401
+
+    @jwt.invalid_token_loader
+    def invalid_token_callback(error):
+        return jsonify(success=False, message="Invalid token", error="Invalid Token"), 401
+
+    @jwt.unauthorized_loader
+    def missing_token_callback(error):
+        return jsonify(success=False, message="Authorization token is required", error="Missing Token"), 401
+
+    # Health check endpoint
+    @app.route("/api/health", methods=["GET"])
+    def health_check():
+        return jsonify(success=True, message="Electronics Shop API is running", version="1.0.0")
+
+    # API info endpoint
+    @app.route("/api", methods=["GET"])
+    def api_info():
+        return jsonify(success=True, data={
+            "message": "Electronics Shop API",
+            "version": "1.0.0",
+            "endpoints": {
+                "auth": "/api/auth/*",
+                "products": "/api/products/*",
+                "categories": "/api/categories/*",
+                "cart": "/api/cart/*",
+                "orders": "/api/orders/*",
+                "addresses": "/api/addresses/*",
+                "admin": "/api/admin/*",
+            },
+        })
+
+
+# Entry point
+if __name__ == "__main__":
     app = create_app()
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=os.getenv('FLASK_ENV') == 'development')
+    
+    # Get configuration from environment
+    debug = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
+    host = os.getenv('HOST', '0.0.0.0')
+    port = int(os.getenv('PORT', 5000))
+    
+    app.run(debug=debug, host=host, port=port)

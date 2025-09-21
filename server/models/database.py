@@ -61,7 +61,7 @@ def create_default_admin() -> None:
         return
     
     # I Imported here to avoid circular imports
-    from models.user import User
+    from server.models.user import User
     
     try:
         admin_user = User.create(
