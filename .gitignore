@@ -7,9 +7,17 @@ __pycache__/
 # virtualenvs
 server/.venv/
 .venv/
+.venv311/
 venv/
 .env
 .env.*.local
+
+# test / tooling caches
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.pylint.d/
 
 # editor / OS
 .vscode/
