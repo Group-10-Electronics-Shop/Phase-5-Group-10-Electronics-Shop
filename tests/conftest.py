@@ -1,34 +1,25 @@
 import os
 import pytest
 from server import create_app
-from server.extensions import db as _db
+from server.models.database import reset_database 
 
-TEST_DB_URI = os.environ.get("TEST_DATABASE_URL", "sqlite:///:memory:")
 
+TEST_DB_URI = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/test_db")
 
 @pytest.fixture(scope="session")
 def app():
-    config = {
-        "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": TEST_DB_URI,
-        "SQLALCHEMY_TRACK_MODIFICATIONS": False,
-        "JWT_SECRET": os.environ.get("JWT_SECRET", "test-jwt-secret"),
-    }
-    app = create_app(config)
-    return app
+    # ensure env is correct for create_app()
+    os.environ["DATABASE_URL"] = TEST_DB_URI
+    os.environ["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "test-secret")
 
+    # create app (this will call init_db inside create_app)
+    app = create_app()
 
-@pytest.fixture(scope="session")
-def _db_app(app):
-    
-    # Create the database and the database tables
-    with app.app_context():
-        _db.create_all()
-        yield _db
-        _db.session.remove()
-        _db.drop_all()
+    reset_database()
 
+    yield app
 
 @pytest.fixture
-def client(app, _db_app):
+def client(app):
+    app.testing = True
     return app.test_client()

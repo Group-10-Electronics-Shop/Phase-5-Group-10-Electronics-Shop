@@ -1,8 +1,8 @@
 import pytest
 import json
 from app import create_app
-from models.database import reset_database
-from models.user import User
+from server.models.database import reset_database
+from server.models.user import User
 
 @pytest.fixture
 def app():
