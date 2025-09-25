@@ -1,0 +1,170 @@
+{
+    "info": {
+      "name": "Electronics Shop API",
+      "description": "Postman collection for testing Electronics Shop backend (Flask + JWT)",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "Auth",
+        "item": [
+          {
+            "name": "Register",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+              },
+              "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api","auth","register"] }
+            }
+          },
+          {
+            "name": "Login",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+              },
+              "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Products",
+        "item": [
+          {
+            "name": "List Products",
+            "request": {
+              "method": "GET",
+              "url": { "raw": "{{base_url}}/api/products", "host": ["{{base_url}}"], "path": ["api","products"] }
+            }
+          },
+          {
+            "name": "Product Details",
+            "request": {
+              "method": "GET",
+              "url": { "raw": "{{base_url}}/api/products/:id", "host": ["{{base_url}}"], "path": ["api","products",":id"] }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Categories",
+        "item": [
+          {
+            "name": "List Categories",
+            "request": {
+              "method": "GET",
+              "url": { "raw": "{{base_url}}/api/categories", "host": ["{{base_url}}"], "path": ["api","categories"] }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Cart",
+        "item": [
+          {
+            "name": "View Cart",
+            "request": {
+              "method": "GET",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+              ],
+              "url": { "raw": "{{base_url}}/api/cart", "host": ["{{base_url}}"], "path": ["api","cart"] }
+            }
+          },
+          {
+            "name": "Add to Cart",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 2\n}"
+              },
+              "url": { "raw": "{{base_url}}/api/cart", "host": ["{{base_url}}"], "path": ["api","cart"] }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Orders",
+        "item": [
+          {
+            "name": "Place Order",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"cart_id\": 1,\n  \"address\": \"123 Main St\",\n  \"billing_info\": {\n    \"card_number\": \"1234-5678-9012-3456\",\n    \"expiry\": \"12/25\"\n  }\n}"
+              },
+              "url": { "raw": "{{base_url}}/api/orders", "host": ["{{base_url}}"], "path": ["api","orders"] }
+            }
+          },
+          {
+            "name": "View Orders",
+            "request": {
+              "method": "GET",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+              ],
+              "url": { "raw": "{{base_url}}/api/orders", "host": ["{{base_url}}"], "path": ["api","orders"] }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Admin",
+        "item": [
+          {
+            "name": "Create Product",
+            "request": {
+              "method": "POST",
+              "header": [
+                { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Smart TV\",\n  \"category\": \"TVs\",\n  \"price\": 999.99,\n  \"stock\": 10\n}"
+              },
+              "url": { "raw": "{{base_url}}/api/admin/products", "host": ["{{base_url}}"], "path": ["api","admin","products"] }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Health Check",
+        "item": [
+          {
+            "name": "API Health",
+            "request": {
+              "method": "GET",
+              "url": { "raw": "{{base_url}}/api/health", "host": ["{{base_url}}"], "path": ["api","health"] }
+            }
+          }
+        ]
+      }
+    ],
+    "variable": [
+      { "key": "base_url", "value": "http://127.0.0.1:5000" },
+      { "key": "jwt_token", "value": "" }
+    ]
+  }
+  
