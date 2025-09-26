@@ -35,4 +35,4 @@ dist/
 build/
 
 # docs screenshot (if you keep screenshots locally)
-docs/actions-screenshot.png
+docs/actions-screenshot.png.env.local

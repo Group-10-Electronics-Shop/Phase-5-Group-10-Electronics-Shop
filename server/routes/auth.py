@@ -1,233 +1,184 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from server.models.user import User
-from server.utils.jwt_utils import JWTManager, create_login_response, create_register_response
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, create_refresh_token
+from marshmallow import ValidationError
+from server.models import db, User, UserRole
+from server.schemas import UserRegistrationSchema, UserLoginSchema, UserUpdateSchema
+from server.utils import success_response, error_response
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
-
-def _split_name(name: str):
-    """Split a full name into first and last (best-effort)."""
-    parts = name.strip().split()
-    if not parts:
-        return None, None
-    if len(parts) == 1:
-        return parts[0], None
-    return parts[0], " ".join(parts[1:])
-
-
-@auth_bp.route('/auth/register', methods=['POST'])
+@auth_bp.route('/register', methods=['POST'])
 def register():
     """Register a new user"""
     try:
-        data = request.get_json()
-
-        if not data:
-            return jsonify({'error': 'Request body must be JSON'}), 400
-
-        # Accept either explicit fields or fall back to email/name
-        email = (data.get('email') or '').strip().lower()
-        username = (data.get('username') or '').strip() or (email.split('@')[0] if email else '')
-        first_name = (data.get('first_name') or '').strip()
-        last_name = (data.get('last_name') or '').strip()
-        full_name = (data.get('name') or '').strip()  # optional single full name
-        password = data.get('password', '')
-
-        # If first/last missing but name provided, split it
-        if not first_name and full_name:
-            f, l = _split_name(full_name)
-            first_name = first_name or (f or '')
-            last_name = last_name or (l or '')
-
-        # If still missing required fields, provide helpful message
-        required_fields = []
-        if not username:
-            required_fields.append('username')
-        if not email:
-            required_fields.append('email')
-        if not password:
-            required_fields.append('password')
-        if not first_name:
-            required_fields.append('first_name')
-        if not last_name:
-            # allow last_name to be empty string in case user has single name,
-            # but tests expect something — mark missing if totally empty
-            required_fields.append('last_name')
-
-        if required_fields:
-            return jsonify({
-                'error': f'Missing required fields: {", ".join(required_fields)}'
-            }), 400
-
-        # Creating user
-        user = User.create(
-            username=username,
-            email=email,
-            password=password,
-            first_name=first_name,
-            last_name=last_name,
-            address=data.get('address', None),
-            phone=data.get('phone', None),
-            role=data.get('role', 'customer')
+        schema = UserRegistrationSchema()
+        data = schema.load(request.json)
+        
+        # Check if user already exists
+        if User.query.filter_by(email=data['email']).first():
+            return error_response('User with this email already exists', 409)
+        
+        # Create new user
+        user = User(
+            email=data['email'],
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            phone=data.get('phone'),
+            role=UserRole.CUSTOMER
         )
-
-        if not user:
-            return jsonify({'error': 'User creation failed'}), 500
-
-        response_data = create_register_response(user)
-        return jsonify(response_data), 201
-
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        user.set_password(data['password'])
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        # Create tokens
+        access_token = create_access_token(identity=user.id)
+        refresh_token = create_refresh_token(identity=user.id)
+        
+        return success_response(
+            'User registered successfully',
+            {
+                'user': user.to_dict(),
+                'access_token': access_token,
+                'refresh_token': refresh_token
+            },
+            201
+        )
+        
+    except ValidationError as e:
+        return error_response('Validation failed', 400, e.messages)
     except Exception as e:
-        # keep error messages generic for security
-        return jsonify({'error': 'Registration failed. Please try again.'}), 500
+        db.session.rollback()
+        return error_response(f'Registration failed: {str(e)}', 500)
 
-
-@auth_bp.route('/auth/login', methods=['POST'])
+@auth_bp.route('/login', methods=['POST'])
 def login():
     """Login user"""
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'Request body must be JSON'}), 400
-
-        # Accept either username OR email in tests/clients
-        username_or_email = (data.get('username') or data.get('email') or '').strip()
-        password = data.get('password', '')
-
-        if not username_or_email or not password:
-            return jsonify({'error': 'Username/email and password are required'}), 400
-
-        # Authenticate user
-        user = User.authenticate(username_or_email, password)
-
-        if not user:
-            return jsonify({'error': 'Invalid credentials'}), 401
-
-        response_data = create_login_response(user)
-        return jsonify(response_data), 200
-
+        schema = UserLoginSchema()
+        data = schema.load(request.json)
+        
+        user = User.query.filter_by(email=data['email']).first()
+        
+        if not user or not user.check_password(data['password']):
+            return error_response('Invalid email or password', 401)
+        
+        if not user.is_active:
+            return error_response('Account is deactivated', 403)
+        
+        # Create tokens
+        access_token = create_access_token(identity=user.id)
+        refresh_token = create_refresh_token(identity=user.id)
+        
+        return success_response(
+            'Login successful',
+            {
+                'user': user.to_dict(),
+                'access_token': access_token,
+                'refresh_token': refresh_token
+            }
+        )
+        
+    except ValidationError as e:
+        return error_response('Validation failed', 400, e.messages)
     except Exception as e:
-        return jsonify({'error': 'Login failed. Please try again.'}), 500
+        return error_response(f'Login failed: {str(e)}', 500)
 
-
-@auth_bp.route('/auth/refresh', methods=['POST'])
+@auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
     """Refresh access token"""
     try:
-        user_id = get_jwt_identity()
-
-        if not user_id:
-            return jsonify({'error': 'Invalid refresh token'}), 401
-
-        new_access_token = JWTManager.create_access_token_from_refresh(user_id)
-
-        if not new_access_token:
-            return jsonify({'error': 'User not found'}), 404
-
-        return jsonify({
-            'message': 'Token refreshed successfully',
-            'access_token': new_access_token
-        }), 200
-
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user or not user.is_active:
+            return error_response('User not found or inactive', 404)
+        
+        access_token = create_access_token(identity=user.id)
+        
+        return success_response(
+            'Token refreshed successfully',
+            {'access_token': access_token}
+        )
+        
     except Exception as e:
-        return jsonify({'error': 'Token refresh failed'}), 500
+        return error_response(f'Token refresh failed: {str(e)}', 500)
 
-
-@auth_bp.route('/users/me', methods=['GET'])
+@auth_bp.route('/profile', methods=['GET'])
 @jwt_required()
-def get_current_user():
+def get_profile():
     """Get current user profile"""
     try:
-        user = JWTManager.get_current_user()
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
         if not user:
-            return jsonify({'error': 'User not found'}), 404
-        return jsonify({'user': user.to_dict()}), 200
+            return error_response('User not found', 404)
+        
+        return success_response('Profile retrieved successfully', user.to_dict())
+        
     except Exception as e:
-        return jsonify({'error': 'Failed to fetch user profile'}), 500
+        return error_response(f'Failed to get profile: {str(e)}', 500)
 
-
-@auth_bp.route('/users/me', methods=['PUT'])
+@auth_bp.route('/profile', methods=['PUT'])
 @jwt_required()
-def update_current_user():
+def update_profile():
     """Update current user profile"""
     try:
-        user = JWTManager.get_current_user()
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
         if not user:
-            return jsonify({'error': 'User not found'}), 404
-
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'Request body must be JSON'}), 400
-
-        allowed_fields = ['first_name', 'last_name', 'address', 'phone']
-        update_data = {}
-        for field in allowed_fields:
-            if field in data:
-                value = data[field]
-                if value is not None:
-                    value = str(value).strip()
-                    if value == '':
-                        value = None
-                update_data[field] = value
-
-        if not update_data:
-            return jsonify({'error': 'No valid fields to update'}), 400
-
-        user.update_profile(**update_data)
-        return jsonify({'message': 'Profile updated successfully', 'user': user.to_dict()}), 200
-
+            return error_response('User not found', 404)
+        
+        schema = UserUpdateSchema()
+        data = schema.load(request.json)
+        
+        # Update user fields
+        for field, value in data.items():
+            if hasattr(user, field):
+                setattr(user, field, value)
+        
+        db.session.commit()
+        
+        return success_response('Profile updated successfully', user.to_dict())
+        
+    except ValidationError as e:
+        return error_response('Validation failed', 400, e.messages)
     except Exception as e:
-        return jsonify({'error': 'Profile update failed'}), 500
+        db.session.rollback()
+        return error_response(f'Failed to update profile: {str(e)}', 500)
 
-
-@auth_bp.route('/users/me/change-password', methods=['POST'])
+@auth_bp.route('/change-password', methods=['POST'])
 @jwt_required()
 def change_password():
-    """Change current user password"""
+    """Change user password"""
     try:
-        user = JWTManager.get_current_user()
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
         if not user:
-            return jsonify({'error': 'User not found'}), 404
-
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'Request body must be JSON'}), 400
-
-        current_password = data.get('current_password', '')
-        new_password = data.get('new_password', '')
-
+            return error_response('User not found', 404)
+        
+        data = request.json
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        
         if not current_password or not new_password:
-            return jsonify({'error': 'Current password and new password are required'}), 400
-
-        user.change_password(current_password, new_password)
-        return jsonify({'message': 'Password changed successfully'}), 200
-
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+            return error_response('Current password and new password are required', 400)
+        
+        if not user.check_password(current_password):
+            return error_response('Current password is incorrect', 400)
+        
+        if len(new_password) < 6:
+            return error_response('New password must be at least 6 characters long', 400)
+        
+        user.set_password(new_password)
+        db.session.commit()
+        
+        return success_response('Password changed successfully')
+        
     except Exception as e:
-        return jsonify({'error': 'Password change failed'}), 500
-
-
-@auth_bp.route('/auth/validate', methods=['GET'])
-@jwt_required()
-def validate_token():
-    """Validate JWT token"""
-    try:
-        user = JWTManager.get_current_user()
-        if not user:
-            return jsonify({'error': 'Invalid token'}), 401
-
-        claims = JWTManager.get_token_claims()
-        return jsonify({
-            'valid': True,
-            'user_id': user.id,
-            'username': user.username,
-            'role': user.role,
-            'claims': claims
-        }), 200
-
-    except Exception as e:
-        return jsonify({'error': 'Token validation failed'}), 500
+        db.session.rollback()
+        return error_response(f'Failed to change password: {str(e)}', 500)

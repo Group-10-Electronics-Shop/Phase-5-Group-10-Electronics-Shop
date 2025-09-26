@@ -1,127 +1,148 @@
 import os
-from datetime import datetime, timedelta
-from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager as FlaskJWTManager
+from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
+from server.config import config_by_name as config
+from server.models import db
+from server.routes.auth import auth_bp
+from server.routes.products import products_bp
+from server.routes.categories import categories_bp
+from server.routes.cart import cart_bp
+from server.routes.orders import orders_bp
+from server.routes.addresses import addresses_bp
+from server.routes.admin import admin_bp
 
-load_dotenv()
-
-START_TIME = datetime.utcnow().isoformat() + "Z"
-
-
-def _register_public_routes(app):
-    """Register simple public/demo routes (health + sample products)."""
-    @app.route("/health", methods=["GET"])
-    def health():
-        return jsonify({"status": "ok", "started_at": START_TIME}), 200
-
-    @app.route("/", methods=["GET"])
-    def index():
-        return jsonify({"message": "Electronics Shop API (skeleton)"}), 200
-
-    @app.route("/products", methods=["GET"])
-    def products():
-        # sample dataset (1..100)
-        sample_products = [{"id": i, "name": f"Product {i}", "price": i * 10} for i in range(1, 101)]
-
-        try:
-            page = int(request.args.get("page", 1))
-        except (TypeError, ValueError):
-            page = 1
-        try:
-            per_page = int(request.args.get("per_page", 10))
-        except (TypeError, ValueError):
-            per_page = 10
-
-        if page < 1:
-            page = 1
-        per_page = max(1, min(100, per_page))
-
-        total = len(sample_products)
-        start = (page - 1) * per_page
-        end = start + per_page
-        items = sample_products[start:end]
-        total_pages = (total + per_page - 1) // per_page
-
-        return jsonify({
-            "items": items,
-            "meta": {
-                "page": page,
-                "per_page": per_page,
-                "total": total,
-                "total_pages": total_pages
-            }
-        }), 200
-
-
-def create_app(config=None):
-    """
-    Application factory. Tests should call `create_app(config)` to override settings.
-    Example config keys: TESTING, DATABASE_URL, SKIP_DB_INIT, JWT_SECRET_KEY.
-    """
+def create_app(config_name=None):
+    """Application factory pattern"""
     app = Flask(__name__)
-
-    # defaults (can be overridden)
-    app.config.setdefault('JWT_SECRET_KEY', os.getenv('JWT_SECRET_KEY', os.getenv('ENV_JWT_SECRET_KEY', 'change-me-in-prod')))
-    app.config.setdefault('JWT_ACCESS_TOKEN_EXPIRES', timedelta(hours=24))
-    app.config.setdefault('JWT_REFRESH_TOKEN_EXPIRES', timedelta(days=30))
-    app.config.setdefault('DATABASE_URL', os.getenv('DATABASE_URL', os.getenv('ENV_DATABASE_URL', 'postgresql://username:password@localhost/electronics_shop')))
-    app.config.setdefault('CORS_ORIGINS', ['http://localhost:3000', 'https://your-frontend-domain.com'])
-
-    if config:
-        app.config.update(config)
-
-    # init extensions
-    CORS(app, origins=app.config.get('CORS_ORIGINS'))
-    FlaskJWTManager(app)
-
-    # initialize DB unless tests ask to skip it
-    try:
-        if not app.config.get('SKIP_DB_INIT', False):
-            # import here to avoid import-time DB side effects
-            from server.models.database import init_db
-            init_db(app.config['DATABASE_URL'])
-    except Exception as e:
-        # don't crash app creation if DB not reachable during tests or early dev
-        app.logger.warning("Database init failed during create_app(): %s", e)
-
-    # register auth blueprint (safe import)
-    try:
-        from server.routes.auth import auth_bp
-        app.register_blueprint(auth_bp, url_prefix='/api')
-    except Exception as e:
-        app.logger.warning("Could not register auth blueprint: %s", e)
-
-    # public routes for tests & demos
-    _register_public_routes(app)
-
-    @app.route('/api/health')
-    def api_health():
-        return {'status': 'healthy', 'message': 'Electronics Shop Auth API is running'}
-
+    
+    # Configuration
+    config_name = config_name or os.environ.get('FLASK_ENV', 'development')
+    app.config.from_object(config[config_name])
+    
+    # Initialize extensions
+    db.init_app(app)
+    jwt = JWTManager(app)
+    migrate = Migrate(app, db)
+    
+    # CORS configuration
+    CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
+    
+    # Register blueprints
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(products_bp)
+    app.register_blueprint(categories_bp)
+    app.register_blueprint(cart_bp)
+    app.register_blueprint(orders_bp)
+    app.register_blueprint(addresses_bp)
+    app.register_blueprint(admin_bp)
+    
+    # Default root route
+    @app.route('/', methods=['GET'])
+    def index():
+        return jsonify({
+            'success': True,
+            'message': 'Welcome to the Electronics Shop API',
+            'version': '1.0.0',
+            'routes': {
+                'health': '/api/health',
+                'api_info': '/api',
+                'auth': '/api/auth/*',
+                'products': '/api/products/*',
+                'categories': '/api/categories/*',
+                'cart': '/api/cart/*',
+                'orders': '/api/orders/*',
+                'addresses': '/api/addresses/*',
+                'admin': '/api/admin/*'
+            }
+        })
+    
+    # Error handlers
     @app.errorhandler(404)
     def not_found(error):
-        return jsonify({'error': 'Resource not found'}), 404
-
+        return jsonify({
+            'success': False,
+            'message': 'Resource not found',
+            'error': 'Not Found'
+        }), 404
+    
     @app.errorhandler(500)
     def internal_error(error):
-        return jsonify({'error': 'Internal server error'}), 500
-
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': 'Internal server error',
+            'error': 'Internal Server Error'
+        }), 500
+    
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({
+            'success': False,
+            'message': 'Bad request',
+            'error': 'Bad Request'
+        }), 400
+    
+    # JWT error handlers
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        return jsonify({
+            'success': False,
+            'message': 'Token has expired',
+            'error': 'Token Expired'
+        }), 401
+    
+    @jwt.invalid_token_loader
+    def invalid_token_callback(error):
+        return jsonify({
+            'success': False,
+            'message': 'Invalid token',
+            'error': 'Invalid Token'
+        }), 401
+    
+    @jwt.unauthorized_loader
+    def missing_token_callback(error):
+        return jsonify({
+            'success': False,
+            'message': 'Authorization token is required',
+            'error': 'Missing Token'
+        }), 401
+    
+    # Health check endpoint
+    @app.route('/api/health', methods=['GET'])
+    def health_check():
+        return jsonify({
+            'success': True,
+            'message': 'Electronics Shop API is running',
+            'version': '1.0.0'
+        })
+    
+    # API info endpoint
+    @app.route('/api', methods=['GET'])
+    def api_info():
+        return jsonify({
+            'success': True,
+            'message': 'Electronics Shop API',
+            'version': '1.0.0',
+            'endpoints': {
+                'auth': '/api/auth/*',
+                'products': '/api/products/*',
+                'categories': '/api/categories/*',
+                'cart': '/api/cart/*',
+                'orders': '/api/orders/*',
+                'addresses': '/api/addresses/*',
+                'admin': '/api/admin/*'
+            }
+        })
+    
     return app
 
-
-# module-level app so `from server.app import app` works for simple local runs.
-try:
-    app = create_app()
-except Exception as exc:
-    # fallback so imports succeed even if DB/init failed
-    app = Flask(__name__)
-    app.logger.warning("Fallback app created; create_app() failed: %s", exc)
-
-
 if __name__ == '__main__':
-    port = int(os.environ.get('ENV_PORT', os.environ.get('PORT', 5000)))
-    debug = os.environ.get('ENV_DEBUG', 'False').lower() in ('1', 'true', 'yes')
-    host = os.environ.get('ENV_HOST', '0.0.0.0')
-    app.run(host=host, port=port, debug=debug)
+    app = create_app()
+    
+    # Create tables if they don't exist
+    with app.app_context():
+        db.create_all()
+    
+    app.run(debug=True, host='0.0.0.0', port=5000)
