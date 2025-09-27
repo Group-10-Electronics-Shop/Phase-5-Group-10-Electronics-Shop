@@ -24,6 +24,19 @@ START_TIME = datetime.utcnow().isoformat() + "Z"
 
 def create_app():
     """Application factory pattern."""
+from flask_migrate import Migrate
+from server.config import config_by_name as config
+from server.models.models import db
+from server.models.auth import auth_bp
+from server.models.products import products_bp
+from server.models.categories import categories_bp
+from server.models.cart import cart_bp
+from server.models.orders import orders_bp
+from server.models.addresses import addresses_bp
+from server.models.admin import admin_bp
+
+def create_app(config_name=None):
+    """Application factory pattern"""
     app = Flask(__name__)
     
     # Load configuration
@@ -57,6 +70,16 @@ def _register_public_routes(app, jwt, db):
         return jsonify({"status": "ok", "started_at": START_TIME}), 200
 
     @app.route("/", methods=["GET"])
+    # Register blueprints
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(products_bp)
+    app.register_blueprint(categories_bp)
+    app.register_blueprint(cart_bp)
+    app.register_blueprint(orders_bp)
+    app.register_blueprint(addresses_bp)
+    app.register_blueprint(admin_bp)
+    
+    @app.route('/', methods=['GET'])
     def index():
         return jsonify({
             'success': True,
