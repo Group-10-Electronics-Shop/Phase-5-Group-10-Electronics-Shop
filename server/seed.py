@@ -3,9 +3,10 @@ Database seeding script for Electronics Shop
 Run this script to populate the database with sample data
 """
 
+import json
+from decimal import Decimal
 from server.app import create_app
 from server.models import db, User, Category, Product, UserRole
-from decimal import Decimal
 
 
 def seed_database():
@@ -53,36 +54,18 @@ def seed_database():
         # Create categories
         print("Creating categories...")
         categories_data = [
-            {
-                'name': 'Smartphones',
-                'description': 'Latest smartphones and mobile devices',
-                'image_url': 'https://example.com/images/smartphones.jpg'
-            },
-            {
-                'name': 'Laptops',
-                'description': 'Powerful laptops and notebooks',
-                'image_url': 'https://example.com/images/laptops.jpg'
-            },
-            {
-                'name': 'Tablets',
-                'description': 'Tablets and e-readers',
-                'image_url': 'https://example.com/images/tablets.jpg'
-            },
-            {
-                'name': 'Audio',
-                'description': 'Headphones, speakers, and audio equipment',
-                'image_url': 'https://example.com/images/audio.jpg'
-            },
-            {
-                'name': 'Gaming',
-                'description': 'Gaming consoles and accessories',
-                'image_url': 'https://example.com/images/gaming.jpg'
-            },
-            {
-                'name': 'Wearables',
-                'description': 'Smartwatches and fitness trackers',
-                'image_url': 'https://example.com/images/wearables.jpg'
-            }
+            {'name': 'Smartphones', 'description': 'Latest smartphones and mobile devices',
+             'image_url': 'https://example.com/images/smartphones.jpg'},
+            {'name': 'Laptops', 'description': 'Powerful laptops and notebooks',
+             'image_url': 'https://example.com/images/laptops.jpg'},
+            {'name': 'Tablets', 'description': 'Tablets and e-readers',
+             'image_url': 'https://example.com/images/tablets.jpg'},
+            {'name': 'Audio', 'description': 'Headphones, speakers, and audio equipment',
+             'image_url': 'https://example.com/images/audio.jpg'},
+            {'name': 'Gaming', 'description': 'Gaming consoles and accessories',
+             'image_url': 'https://example.com/images/gaming.jpg'},
+            {'name': 'Wearables', 'description': 'Smartwatches and fitness trackers',
+             'image_url': 'https://example.com/images/wearables.jpg'}
         ]
 
         categories = []
@@ -91,12 +74,11 @@ def seed_database():
             categories.append(category)
             db.session.add(category)
 
-        db.session.flush()  # Get category IDs
+        db.session.flush()  # Assign category IDs
 
         # Create products
         print("Creating products...")
         products_data = [
-            # Smartphones
             {
                 'name': 'iPhone 15 Pro',
                 'description': 'Latest iPhone with A17 Pro chip and titanium design',
@@ -109,17 +91,17 @@ def seed_database():
                 'warranty_months': 24,
                 'is_featured': True,
                 'category_id': categories[0].id,
-                'image_urls': [
+                'image_urls': json.dumps([
                     'https://example.com/images/iphone15pro-1.jpg',
                     'https://example.com/images/iphone15pro-2.jpg'
-                ],
-                'specifications': {
+                ]),
+                'specifications': json.dumps({
                     'Display': '6.1-inch Super Retina XDR',
                     'Processor': 'A17 Pro chip',
                     'Storage': '128GB',
                     'Camera': '48MP Main camera',
                     'Battery': 'Up to 23 hours video playback'
-                }
+                })
             },
             {
                 'name': 'Samsung Galaxy S24',
@@ -132,19 +114,18 @@ def seed_database():
                 'warranty_months': 24,
                 'is_featured': True,
                 'category_id': categories[0].id,
-                'image_urls': [
+                'image_urls': json.dumps([
                     'https://example.com/images/galaxy-s24-1.jpg',
                     'https://example.com/images/galaxy-s24-2.jpg'
-                ],
-                'specifications': {
+                ]),
+                'specifications': json.dumps({
                     'Display': '6.2-inch Dynamic AMOLED 2X',
                     'Processor': 'Snapdragon 8 Gen 3',
                     'Storage': '256GB',
                     'Camera': '50MP Triple camera',
                     'Battery': '4000mAh'
-                }
+                })
             },
-            # Laptops
             {
                 'name': 'MacBook Pro 16"',
                 'description': 'Professional laptop with M3 Pro chip',
@@ -156,17 +137,17 @@ def seed_database():
                 'warranty_months': 12,
                 'is_featured': True,
                 'category_id': categories[1].id,
-                'image_urls': [
+                'image_urls': json.dumps([
                     'https://example.com/images/macbook-pro-16-1.jpg',
                     'https://example.com/images/macbook-pro-16-2.jpg'
-                ],
-                'specifications': {
+                ]),
+                'specifications': json.dumps({
                     'Display': '16.2-inch Liquid Retina XDR',
                     'Processor': 'Apple M3 Pro chip',
                     'Memory': '18GB unified memory',
                     'Storage': '512GB SSD',
                     'Graphics': '18-core GPU'
-                }
+                })
             },
             {
                 'name': 'Dell XPS 13',
@@ -179,19 +160,18 @@ def seed_database():
                 'model': 'XPS 13',
                 'warranty_months': 12,
                 'category_id': categories[1].id,
-                'image_urls': [
+                'image_urls': json.dumps([
                     'https://example.com/images/dell-xps-13-1.jpg',
                     'https://example.com/images/dell-xps-13-2.jpg'
-                ],
-                'specifications': {
+                ]),
+                'specifications': json.dumps({
                     'Display': '13.4-inch FHD+',
                     'Processor': 'Intel Core i7-1360P',
                     'Memory': '16GB LPDDR5',
                     'Storage': '512GB SSD',
                     'Graphics': 'Intel Iris Xe'
-                }
+                })
             },
-            # Tablets
             {
                 'name': 'iPad Pro 12.9"',
                 'description': 'Professional tablet with M2 chip',
@@ -203,19 +183,18 @@ def seed_database():
                 'warranty_months': 12,
                 'is_featured': True,
                 'category_id': categories[2].id,
-                'image_urls': [
+                'image_urls': json.dumps([
                     'https://example.com/images/ipad-pro-129-1.jpg',
                     'https://example.com/images/ipad-pro-129-2.jpg'
-                ],
-                'specifications': {
+                ]),
+                'specifications': json.dumps({
                     'Display': '12.9-inch Liquid Retina XDR',
                     'Processor': 'Apple M2 chip',
                     'Storage': '128GB',
                     'Camera': '12MP Wide camera',
                     'Connectivity': 'Wi-Fi 6E'
-                }
+                })
             },
-            # Audio
             {
                 'name': 'Sony WH-1000XM5',
                 'description': 'Premium noise-canceling headphones',
@@ -228,17 +207,17 @@ def seed_database():
                 'warranty_months': 12,
                 'is_featured': True,
                 'category_id': categories[3].id,
-                'image_urls': [
+                'image_urls': json.dumps([
                     'https://example.com/images/sony-wh1000xm5-1.jpg',
                     'https://example.com/images/sony-wh1000xm5-2.jpg'
-                ],
-                'specifications': {
+                ]),
+                'specifications': json.dumps({
                     'Type': 'Over-ear wireless headphones',
                     'Noise Canceling': 'Industry-leading ANC',
                     'Battery': 'Up to 30 hours',
                     'Connectivity': 'Bluetooth 5.2',
                     'Features': 'Quick Attention mode'
-                }
+                })
             },
             {
                 'name': 'AirPods Pro (2nd Gen)',
@@ -250,18 +229,17 @@ def seed_database():
                 'model': 'AirPods Pro',
                 'warranty_months': 12,
                 'category_id': categories[3].id,
-                'image_urls': [
+                'image_urls': json.dumps([
                     'https://example.com/images/airpods-pro-2gen-1.jpg'
-                ],
-                'specifications': {
+                ]),
+                'specifications': json.dumps({
                     'Type': 'In-ear wireless earbuds',
                     'Noise Canceling': 'Active Noise Cancellation',
                     'Battery': 'Up to 6 hours listening time',
                     'Features': 'Adaptive Transparency',
                     'Charging': 'MagSafe compatible case'
-                }
+                })
             },
-            # Gaming
             {
                 'name': 'PlayStation 5',
                 'description': 'Next-generation gaming console',
@@ -273,19 +251,18 @@ def seed_database():
                 'warranty_months': 12,
                 'is_featured': True,
                 'category_id': categories[4].id,
-                'image_urls': [
+                'image_urls': json.dumps([
                     'https://example.com/images/ps5-1.jpg',
                     'https://example.com/images/ps5-2.jpg'
-                ],
-                'specifications': {
+                ]),
+                'specifications': json.dumps({
                     'Processor': 'AMD Zen 2',
                     'Graphics': 'AMD RDNA 2',
                     'Memory': '16GB GDDR6',
                     'Storage': '825GB SSD',
                     'Resolution': 'Up to 4K 120fps'
-                }
+                })
             },
-            # Wearables
             {
                 'name': 'Apple Watch Series 9',
                 'description': 'Advanced smartwatch with health features',
@@ -296,16 +273,16 @@ def seed_database():
                 'model': 'Apple Watch Series 9',
                 'warranty_months': 12,
                 'category_id': categories[5].id,
-                'image_urls': [
+                'image_urls': json.dumps([
                     'https://example.com/images/apple-watch-s9-1.jpg'
-                ],
-                'specifications': {
+                ]),
+                'specifications': json.dumps({
                     'Display': '45mm Retina LTPO OLED',
                     'Processor': 'S9 SiP',
                     'Health': 'ECG, Blood Oxygen, Heart Rate',
                     'Battery': 'Up to 18 hours',
                     'Connectivity': 'GPS + Cellular available'
-                }
+                })
             }
         ]
 
@@ -317,7 +294,7 @@ def seed_database():
         print("Committing changes...")
         db.session.commit()
 
-        print("Database seeded successfully!")
+        print("✅ Database seeded successfully!")
         print(f"Created {len(categories)} categories")
         print(f"Created {len(products_data)} products")
         print("Created 3 users")

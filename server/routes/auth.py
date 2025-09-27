@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, create_refresh_token
 from marshmallow import ValidationError
-from server.models import db, User, UserRole
+from server.models.database import db, User, UserRole
 from server.schemas import UserRegistrationSchema, UserLoginSchema, UserUpdateSchema
 from server.utils import success_response, error_response
 
