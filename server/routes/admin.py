@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from marshmallow import ValidationError
 from datetime import datetime, timedelta
 from sqlalchemy import func, desc
-from server.models import db, User, Product, Order, Category, UserRole, OrderStatus, PaymentStatus, OrderItem
+from server.models.database import db, User, Product, Order, Category, UserRole, OrderStatus, PaymentStatus, OrderItem, OrderItem
 from server.schemas import AdminUserCreateSchema, PaginationSchema
 from server.utils import success_response, error_response, admin_required, paginate_query
 
