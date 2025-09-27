@@ -40,6 +40,25 @@ def create_app(config_name=None):
     app.register_blueprint(addresses_bp, url_prefix="/api/addresses")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
 
+    @app.route('/', methods=['GET'])
+    def index():
+        return jsonify({
+            'success': True,
+            'message': 'Welcome to the Electronics Shop API',
+            'version': '1.0.0',
+            'routes': {
+                'health': '/api/health',
+                'api_info': '/api',
+                'auth': '/api/auth/*',
+                'products': '/api/products/*',
+                'categories': '/api/categories/*',
+                'cart': '/api/cart/*',
+                'orders': '/api/orders/*',
+                'addresses': '/api/addresses/*',
+                'admin': '/api/admin/*'
+            }
+        })
+
     # Error handlers
     @app.errorhandler(404)
     def not_found(error):
