@@ -1,5 +1,5 @@
 from marshmallow import Schema, fields, validate, validates, ValidationError
-from server.models import UserRole, OrderStatus, PaymentStatus
+from server.models.database import UserRole, OrderStatus, PaymentStatus
 
 class UserRegistrationSchema(Schema):
     email = fields.Email(required=True)
@@ -100,8 +100,8 @@ class OrderUpdateSchema(Schema):
     notes = fields.Str()
 
 class PaginationSchema(Schema):
-    page = fields.Int(validate=validate.Range(min=1), missing=1)
-    per_page = fields.Int(validate=validate.Range(min=1, max=100), missing=20)
+    page = fields.Int(validate=validate.Range(min=1), load_default=1)
+    per_page = fields.Int(validate=validate.Range(min=1, max=100), load_default=20)
 
 class ProductFilterSchema(PaginationSchema):
     category_id = fields.Int()
@@ -112,4 +112,4 @@ class ProductFilterSchema(PaginationSchema):
     featured = fields.Bool()
     search = fields.Str()
     sort_by = fields.Str(validate=validate.OneOf(['name', 'price', 'created_at', 'sales_count', 'views_count']))
-    sort_order = fields.Str(validate=validate.OneOf(['asc', 'desc']), missing='asc')
+    sort_order = fields.Str(validate=validate.OneOf(['asc', 'desc']), load_default='asc')

@@ -3,7 +3,6 @@ from datetime import datetime
 from functools import wraps
 from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
-from server.models import User, UserRole, db
 
 def generate_order_number():
     """Generate a unique order number"""
@@ -19,6 +18,9 @@ def admin_required(f):
     """Decorator to require admin role"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # Import here to avoid circular imports
+        from server.models.database import User, UserRole
+        
         verify_jwt_in_request()
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
@@ -33,6 +35,9 @@ def manager_required(f):
     """Decorator to require manager or admin role"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # Import here to avoid circular imports
+        from server.models.database import User, UserRole
+        
         verify_jwt_in_request()
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
@@ -103,12 +108,16 @@ def validate_stock_quantity(product, requested_quantity):
 
 def update_product_stock(product, quantity_sold):
     """Update product stock after sale"""
+    from server.models.database import db
+    
     product.stock_quantity -= quantity_sold
     product.sales_count += quantity_sold
     db.session.commit()
 
 def restore_product_stock(product, quantity_restored):
     """Restore product stock (e.g., when order is cancelled)"""
+    from server.models.database import db
+    
     product.stock_quantity += quantity_restored
     product.sales_count = max(0, product.sales_count - quantity_restored)
     db.session.commit()

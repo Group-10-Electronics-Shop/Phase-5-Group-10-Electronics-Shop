@@ -1,37 +1,43 @@
 import os
+from datetime import timedelta
 from dotenv import load_dotenv
 
-# Load .env file if present
 load_dotenv()
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-key")
+    # General app settings
+    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "jwt-secret")
-    CORS_HEADERS = "Content-Type"
+
+    # JWT settings
+    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "jwt-secret-key")
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL",
-        f"sqlite:///{os.path.join(BASE_DIR, 'dev.db')}"
+    SQLALCHEMY_DATABASE_URI = (
+        os.environ.get("DATABASE_URL")
+        or "postgresql://postgres:1234@localhost/electronics_shop"
     )
+
+
+class ProductionConfig(Config):
+    DEBUG = False
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
+
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "TEST_DATABASE_URL",
-        f"sqlite:///{os.path.join(BASE_DIR, 'test.db')}"
-    )
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
 
-class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/electronics_shop")
 
-# Config map
-config_by_name = dict(
-    development=DevelopmentConfig,
-    testing=TestingConfig,
-    production=ProductionConfig
-)
+# Map environments to configs
+config = {
+    "development": DevelopmentConfig,
+    "production": ProductionConfig,
+    "testing": TestingConfig,
+    "default": DevelopmentConfig,
+}
