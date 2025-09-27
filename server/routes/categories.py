@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
-from server.models import db, Category
+from server.models.database import db, Category
 from server.schemas import CategorySchema
 from server.utils import success_response, error_response, admin_required
 

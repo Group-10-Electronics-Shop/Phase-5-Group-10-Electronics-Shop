@@ -1,112 +1,199 @@
-import json
+"""
+Fixed Authentication tests for Electronics Shop API
+"""
+
 import pytest
+import json
 
-REGISTER_URL = "/api/auth/register"
-LOGIN_URL = "/api/auth/login"
-ME_URL = "/api/users/me"
+# Test URLs
+REGISTER_URL = '/api/auth/register'
+LOGIN_URL = '/api/auth/login'
+ME_URL = '/api/auth/profile'  # Changed from /api/auth/me
 
-
-def register_user(client, name="Test User", email="test@example.com", password="password123"):
-    # Some backends expect 'name', some expect 'first_name'/'last_name'.
-    payload = {"name": name, "email": email, "password": password}
-    r = client.post(REGISTER_URL, json=payload)
-    return r
-
+def register_user(client, email="test@example.com", password="password123", first_name="Test", last_name="User"):
+    """Helper function to register a user with correct field names"""
+    return client.post(REGISTER_URL, json={
+        'email': email,
+        'password': password,
+        'first_name': first_name,  # Fixed: was 'name'
+        'last_name': last_name     # Added: required field
+    })
 
 def login_user(client, email="test@example.com", password="password123"):
-    payload = {"email": email, "password": password}
-    r = client.post(LOGIN_URL, json=payload)
-    return r
+    """Helper function to login a user"""
+    return client.post(LOGIN_URL, json={
+        'email': email,
+        'password': password
+    })
 
+def get_auth_headers(client, email="test@example.com", password="password123"):
+    """Helper function to get authentication headers"""
+    # First register the user
+    register_user(client, email=email, password=password)
+    
+    # Then login to get token
+    response = login_user(client, email=email, password=password)
+    if response.status_code == 200:
+        data = response.get_json()
+        token = data['data']['access_token']
+        return {'Authorization': f'Bearer {token}'}
+    return {}
 
-def get_auth_headers(token):
-    return {"Authorization": f"Bearer {token}"}
+def test_user_registration_success(client):
+    """Test successful user registration"""
+    response = register_user(client)
+    assert response.status_code == 201
+    
+    data = response.get_json()
+    assert data['success'] is True
+    assert 'access_token' in data['data']
+    assert 'user' in data['data']
+    assert data['data']['user']['email'] == 'test@example.com'
 
+def test_user_registration_duplicate_email(client):
+    """Test registration with duplicate email"""
+    # Register first user
+    register_user(client, email="duplicate@example.com")
+    
+    # Try to register same email again
+    response = register_user(client, email="duplicate@example.com")
+    assert response.status_code == 409
+    
+    data = response.get_json()
+    assert data['success'] is False
+    assert 'already exists' in data['message']
 
-def assert_user_shape(obj):
-    assert isinstance(obj, dict)
-    # Accept either id/email or email/name presence
-    assert "id" in obj or "email" in obj
-    assert "email" in obj or "name" in obj or "username" in obj
-
-
-def extract_token_from_response(data):
-    """Return an access token from common response shapes."""
-    if not data:
-        return None
-
-    # top-level token keys
-    for key in ("token", "access_token", "auth_token"):
-        if key in data and data[key]:
-            return data[key]
-
-    # sometimes tokens are nested under 'data' or 'user'
-    if isinstance(data.get("user"), dict):
-        for key in ("token", "access_token", "auth_token"):
-            if key in data["user"] and data["user"][key]:
-                return data["user"][key]
-
-    if isinstance(data.get("data"), dict):
-        for key in ("token", "access_token", "auth_token"):
-            if key in data["data"] and data["data"][key]:
-                return data["data"][key]
-
-    # some implementations return a pair 'access_token'/'refresh_token'
-    if "access_token" in data:
-        return data["access_token"]
-
-    return None
-
-
-def normalize_user_object(obj):
-    """If API returned {"user": {...}} turn it into the inner dict, otherwise return obj."""
-    if isinstance(obj, dict) and "user" in obj and isinstance(obj["user"], dict):
-        return obj["user"]
-    return obj
-
+def test_user_registration_invalid_data(client):
+    """Test registration with invalid data"""
+    response = client.post(REGISTER_URL, json={
+        'email': 'invalid-email',  # Invalid email format
+        'password': '123',  # Too short
+        'first_name': '',   # Empty
+        'last_name': 'User'
+    })
+    
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data['success'] is False
+    assert 'errors' in data
 
 def test_register_login_and_get_me(client):
+    """Test complete registration -> login -> profile flow"""
+    # Register user
     r = register_user(client)
-    assert r.status_code in (200, 201), f"unexpected status {r.status_code} body={r.get_data(as_text=True)}"
-
+    assert r.status_code == 201, f"unexpected registration status {r.status_code} body={r.get_data(as_text=True)}"
+    
+    # Login user
+    r = login_user(client)
+    assert r.status_code == 200, f"unexpected login status {r.status_code} body={r.get_data(as_text=True)}"
+    
+    # Get access token
     data = r.get_json()
-    assert isinstance(data, dict)
-
-    token = extract_token_from_response(data)
-
-    # If register didn't return a token, try logging in
-    if not token:
-        r2 = login_user(client)
-        assert r2.status_code == 200, f"login failed after register: {r2.get_data(as_text=True)}"
-        data2 = r2.get_json()
-        token = extract_token_from_response(data2)
-
-    assert token, "token not returned by register/login"
-
-    headers = get_auth_headers(token)
-    r_me = client.get(ME_URL, headers=headers)
-    assert r_me.status_code == 200, f"/api/users/me failed: {r_me.status_code} {r_me.get_data(as_text=True)}"
-
-    me = r_me.get_json()
-    assert isinstance(me, dict)
-
-    me = normalize_user_object(me)
-    assert_user_shape(me)
-
+    token = data['data']['access_token']
+    
+    # Test profile endpoint
+    headers = {'Authorization': f'Bearer {token}'}
+    r = client.get(ME_URL, headers=headers)
+    assert r.status_code == 200, f"unexpected profile status {r.status_code} body={r.get_data(as_text=True)}"
+    
+    profile_data = r.get_json()
+    assert profile_data['success'] is True
+    assert profile_data['data']['email'] == 'test@example.com'
 
 def test_login_returns_token_and_invalid_credentials_are_rejected(client):
-    # ensure user exists
+    """Test login with valid and invalid credentials"""
+    # Register user first
     register_user(client, email="login-test@example.com")
+    
+    # Test valid login
     r = login_user(client, email="login-test@example.com")
-    assert r.status_code == 200, f"login should succeed, got {r.status_code}"
+    assert r.status_code == 200, f"login should succeed, got {r.status_code} body={r.get_data(as_text=True)}"
+    
     data = r.get_json()
-    token = extract_token_from_response(data)
-    assert token, "login response did not include an access token"
-
-    r_bad = login_user(client, email="login-test@example.com", password="wrongpass")
-    assert r_bad.status_code in (400, 401), f"expected auth failure, got {r_bad.status_code}"
-
+    assert data['success'] is True
+    assert 'access_token' in data['data']
+    
+    # Test invalid credentials
+    r = login_user(client, email="login-test@example.com", password="wrongpassword")
+    assert r.status_code == 401, f"login with wrong password should fail with 401, got {r.status_code}"
+    
+    data = r.get_json()
+    assert data['success'] is False
 
 def test_protected_route_requires_auth(client):
+    """Test that protected routes require authentication"""
+    # Test without token
     r = client.get(ME_URL)
-    assert r.status_code in (401, 403), f"expected 401/403 for unauthenticated, got {r.status_code}"
+    assert r.status_code == 401, f"expected 401 for unauthenticated request, got {r.status_code} body={r.get_data(as_text=True)}"
+    
+    # Test with invalid token
+    headers = {'Authorization': 'Bearer invalid-token'}
+    r = client.get(ME_URL, headers=headers)
+    assert r.status_code == 401, f"expected 401 for invalid token, got {r.status_code}"
+
+def test_user_login_success(client):
+    """Test successful user login"""
+    # Register user first
+    register_user(client, email="login@test.com", password="testpass123")
+    
+    # Login
+    response = login_user(client, email="login@test.com", password="testpass123")
+    assert response.status_code == 200
+    
+    data = response.get_json()
+    assert data['success'] is True
+    assert 'access_token' in data['data']
+    assert 'user' in data['data']
+
+def test_get_profile_success(client):
+    """Test getting user profile with valid token"""
+    headers = get_auth_headers(client, email="profile@test.com", password="testpass123")
+    
+    response = client.get(ME_URL, headers=headers)
+    assert response.status_code == 200
+    
+    data = response.get_json()
+    assert data['success'] is True
+    assert data['data']['email'] == 'profile@test.com'
+
+def test_update_profile_success(client):
+    """Test updating user profile"""
+    headers = get_auth_headers(client, email="update@test.com", password="testpass123")
+    
+    update_data = {
+        'first_name': 'Updated',
+        'phone': '+1234567890'
+    }
+    
+    response = client.put(ME_URL, json=update_data, headers=headers)
+    assert response.status_code == 200
+    
+    data = response.get_json()
+    assert data['success'] is True
+    assert data['data']['first_name'] == 'Updated'
+    assert data['data']['phone'] == '+1234567890'
+
+def test_change_password_success(client):
+    """Test changing password"""
+    # Register and get headers
+    email = "password@test.com"
+    old_password = "oldpass123"
+    new_password = "newpass123"
+    
+    headers = get_auth_headers(client, email=email, password=old_password)
+    
+    # Change password
+    password_data = {
+        'current_password': old_password,
+        'new_password': new_password
+    }
+    
+    response = client.post('/api/auth/change-password', json=password_data, headers=headers)
+    assert response.status_code == 200
+    
+    data = response.get_json()
+    assert data['success'] is True
+    
+    # Test login with new password
+    login_response = login_user(client, email=email, password=new_password)
+    assert login_response.status_code == 200

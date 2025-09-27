@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from marshmallow import ValidationError
 from sqlalchemy import or_, and_
-from server.models import db, Product, Category
+from server.models.database import db, Product, Category
 from server.schemas import ProductCreateSchema, ProductUpdateSchema, ProductFilterSchema
 from server.utils import success_response, error_response, admin_required, paginate_query, generate_sku
 
@@ -178,9 +178,11 @@ def search_products():
         if not search_term:
             return error_response('Search term is required', 400)
         
-        schema = ProductFilterSchema()
-        filters = schema.load(request.args)
+        # Get pagination parameters directly instead of using schema
+        page = request.args.get('page', 1, type=int)
+        per_page = min(request.args.get('per_page', 20, type=int), 100)
         
+        # Build search query
         search_pattern = f"%{search_term}%"
         query = Product.query.filter(
             and_(
@@ -194,22 +196,26 @@ def search_products():
             )
         )
         
-        # Apply additional filters
-        if filters.get('category_id'):
-            query = query.filter_by(category_id=filters['category_id'])
+        # Apply optional filters if provided
+        category_id = request.args.get('category_id', type=int)
+        if category_id:
+            query = query.filter_by(category_id=category_id)
         
-        if filters.get('brand'):
-            query = query.filter_by(brand=filters['brand'])
+        brand = request.args.get('brand')
+        if brand:
+            query = query.filter_by(brand=brand)
         
-        if filters.get('min_price'):
-            query = query.filter(Product.price >= filters['min_price'])
+        min_price = request.args.get('min_price', type=float)
+        if min_price:
+            query = query.filter(Product.price >= min_price)
         
-        if filters.get('max_price'):
-            query = query.filter(Product.price <= filters['max_price'])
+        max_price = request.args.get('max_price', type=float)
+        if max_price:
+            query = query.filter(Product.price <= max_price)
         
         # Apply sorting
-        sort_by = filters.get('sort_by', 'created_at')
-        sort_order = filters.get('sort_order', 'desc')
+        sort_by = request.args.get('sort_by', 'created_at')
+        sort_order = request.args.get('sort_order', 'desc')
         
         if hasattr(Product, sort_by):
             order_column = getattr(Product, sort_by)
@@ -219,11 +225,7 @@ def search_products():
                 query = query.order_by(order_column.asc())
         
         # Paginate results
-        result = paginate_query(
-            query,
-            filters.get('page', 1),
-            filters.get('per_page', 20)
-        )
+        result = paginate_query(query, page, per_page)
         
         products_data = [product.to_dict() for product in result['items']]
         
@@ -236,8 +238,6 @@ def search_products():
             }
         )
         
-    except ValidationError as e:
-        return error_response('Validation failed', 400, e.messages)
     except Exception as e:
         return error_response(f'Failed to search products: {str(e)}', 500)
 
