@@ -4,14 +4,14 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from server.config import config_by_name as config
-from server.models import db
-from server.routes.auth import auth_bp
-from server.routes.products import products_bp
-from server.routes.categories import categories_bp
-from server.routes.cart import cart_bp
-from server.routes.orders import orders_bp
-from server.routes.addresses import addresses_bp
-from server.routes.admin import admin_bp
+from server.models.models import db
+from server.models.auth import auth_bp
+from server.models.products import products_bp
+from server.models.categories import categories_bp
+from server.models.cart import cart_bp
+from server.models.orders import orders_bp
+from server.models.addresses import addresses_bp
+from server.models.admin import admin_bp
 
 def create_app(config_name=None):
     """Application factory pattern"""
@@ -38,7 +38,6 @@ def create_app(config_name=None):
     app.register_blueprint(addresses_bp)
     app.register_blueprint(admin_bp)
     
-    # Default root route
     @app.route('/', methods=['GET'])
     def index():
         return jsonify({
