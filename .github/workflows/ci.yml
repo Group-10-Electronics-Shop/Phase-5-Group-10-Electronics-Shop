@@ -14,10 +14,10 @@ jobs:
       - name: Detect frontend directory (client | my-app)
         id: detect_frontend
         run: |
-          if [ -f my-app/package.json ]; then
-            echo "frontend_dir=my-app" >> $GITHUB_OUTPUT
-          elif [ -f client/package.json ]; then
+          if [ -f client/package.json ]; then
             echo "frontend_dir=client" >> $GITHUB_OUTPUT
+          elif [ -f my-app/package.json ]; then
+            echo "frontend_dir=my-app" >> $GITHUB_OUTPUT
           else
             echo "frontend_dir=" >> $GITHUB_OUTPUT
           fi
@@ -33,10 +33,10 @@ jobs:
         run: |
           set -e
           cd "${{ steps.detect_frontend.outputs.frontend_dir }}"
-          echo "Running frontend steps in $(pwd)"
+          echo "Running frontend tasks in $(pwd)"
           npm ci || npm install
-          # run frontend tests but don't block PRs on flaky UI tests
-          npm test --silent || echo "Frontend tests exited with non-zero status"
+          # run frontend tests but don't fail the entire pipeline on non-zero exit
+          npm test --silent || echo "Frontend tests exited with non-zero status (ignored)"
 
   backend-check:
     name: backend-check
@@ -57,9 +57,9 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.8'
 
-      - name: Ensure system utilities (pg_isready)
+      - name: Ensure pg_isready is available
         run: |
           sudo apt-get update -y
           sudo apt-get install -y postgresql-client
@@ -74,13 +74,13 @@ jobs:
 
       - name: Install backend deps if present
         run: |
+          set -e
           python -m pip install --upgrade pip
           if [ -f server/requirements.txt ]; then
             python -m pip install -r server/requirements.txt
           elif [ -f requirements.txt ]; then
             python -m pip install -r requirements.txt
           else
-            echo "No requirements file found; installing minimal deps for tests"
             python -m pip install pytest flask
           fi
 
@@ -88,21 +88,33 @@ jobs:
         run: |
           for i in $(seq 1 30); do
             pg_isready -h localhost -p 5432 -U postgres && { echo "Postgres is ready"; break; }
-            echo "Waiting for postgres... ($i/30)";
-            sleep 2;
+            echo "Waiting for postgres... ($i/30)"
+            sleep 2
             if [ "$i" -eq 30 ]; then
-              echo "Postgres did not become ready in time";
-              exit 1;
+              echo "Postgres did not become ready in time"
+              exit 1
             fi
           done
 
       - name: Export test env vars (DB + JWT fallback)
         run: |
+          # Make the DB the app/tests expect
           echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_db" >> $GITHUB_ENV
-          if [ -n "${{ secrets.JWT_SECRET }}" ]; then
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $GITHUB_ENV
+
+          # Use repo secret JWT_SECRET_KEY if present, otherwise use a safe test fallback
+          if [ -n "${{ secrets.JWT_SECRET_KEY }}" ]; then
+            echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> $GITHUB_ENV
           else
-            echo "JWT_SECRET=test-jwt-secret" >> $GITHUB_ENV
+            echo "JWT_SECRET_KEY=test-jwt-secret" >> $GITHUB_ENV
+          fi
+
+      - name: Debug env presence (safe)
+        run: |
+          echo "DATABASE_URL=${DATABASE_URL}"
+          if [ -z "${JWT_SECRET_KEY:-}" ]; then
+            echo "WARNING: JWT_SECRET_KEY not set (using fallback)"
+          else
+            echo "JWT secret present"
           fi
 
       - name: Run DB migrations (if alembic present under server/)
@@ -112,26 +124,16 @@ jobs:
             python -m pip install alembic || true
             cd server
             export DATABASE_URL=${DATABASE_URL}
-            # attempt migration; don't fail entire job on migration failure unless you prefer strictness
             alembic upgrade head || echo "alembic upgrade failed (continuing)"
             cd ..
           else
             echo "No alembic config under server/ - skipping migrations"
           fi
 
-      - name: Debug file listing
-        run: |
-          echo "Root:"
-          ls -la
-          echo "server/:"
-          ls -la server || true
-          echo "tests/:"
-          ls -la tests || true
-
       - name: Run backend tests (pytest)
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
-          JWT_SECRET: ${{ env.JWT_SECRET }}
+          JWT_SECRET_KEY: ${{ env.JWT_SECRET_KEY }}
           PYTHONPATH: .
         run: |
           set -e
