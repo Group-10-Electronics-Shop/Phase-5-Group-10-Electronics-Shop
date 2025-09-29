@@ -41,3 +41,4 @@ config = {
     "testing": TestingConfig,
     "default": DevelopmentConfig,
 }
+config_by_name = config
