@@ -14,9 +14,9 @@ jobs:
       - name: Detect frontend directory (client | my-app)
         id: detect_frontend
         run: |
-          if [ -f client/package.json ]; then
+          if [ -d client ] && [ -f client/package.json ]; then
             echo "frontend_dir=client" >> $GITHUB_OUTPUT
-          elif [ -f my-app/package.json ]; then
+          elif [ -d my-app ] && [ -f my-app/package.json ]; then
             echo "frontend_dir=my-app" >> $GITHUB_OUTPUT
           else
             echo "frontend_dir=" >> $GITHUB_OUTPUT
@@ -33,10 +33,10 @@ jobs:
         run: |
           set -e
           cd "${{ steps.detect_frontend.outputs.frontend_dir }}"
-          echo "Running frontend tasks in $(pwd)"
+          echo "Running frontend tasks in: $(pwd)"
           npm ci || npm install
-          # run frontend tests but don't fail the entire pipeline on non-zero exit
-          npm test --silent || echo "Frontend tests exited with non-zero status (ignored)"
+          # Do not fail the whole workflow if frontend tests fail (frontend often comes from forks)
+          npm test --silent || echo "Frontend tests exited with non-zero status"
 
   backend-check:
     name: backend-check
@@ -57,7 +57,15 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.11'
+
+      - name: Show runner info (debug)
+        run: |
+          python --version
+          node --version || true
+          uname -a
+          pwd
+          ls -la
 
       - name: Ensure pg_isready is available
         run: |
@@ -81,13 +89,14 @@ jobs:
           elif [ -f requirements.txt ]; then
             python -m pip install -r requirements.txt
           else
+            echo "No requirements file found; installing minimal deps for tests"
             python -m pip install pytest flask
           fi
 
       - name: Wait for Postgres to be ready
         run: |
           for i in $(seq 1 30); do
-            pg_isready -h localhost -p 5432 -U postgres && { echo "Postgres is ready"; break; }
+            pg_isready -h localhost -p 5432 -U postgres && { echo "Postgres ready"; break; }
             echo "Waiting for postgres... ($i/30)"
             sleep 2
             if [ "$i" -eq 30 ]; then
@@ -98,23 +107,20 @@ jobs:
 
       - name: Export test env vars (DB + JWT fallback)
         run: |
-          # Make the DB the app/tests expect
+          # Ensure the DB value tests expect is available to subsequent steps
           echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_db" >> $GITHUB_ENV
 
-          # Use repo secret JWT_SECRET_KEY if present, otherwise use a safe test fallback
+          # Prefer repository secret names if available; set both names to be robust.
           if [ -n "${{ secrets.JWT_SECRET_KEY }}" ]; then
             echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> $GITHUB_ENV
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET_KEY }}" >> $GITHUB_ENV
+          elif [ -n "${{ secrets.JWT_SECRET }}" ]; then
+            echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET }}" >> $GITHUB_ENV
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $GITHUB_ENV
           else
+            # Forked PRs and some runs won't have access to repo secrets — use a harmless fallback
             echo "JWT_SECRET_KEY=test-jwt-secret" >> $GITHUB_ENV
-          fi
-
-      - name: Debug env presence (safe)
-        run: |
-          echo "DATABASE_URL=${DATABASE_URL}"
-          if [ -z "${JWT_SECRET_KEY:-}" ]; then
-            echo "WARNING: JWT_SECRET_KEY not set (using fallback)"
-          else
-            echo "JWT secret present"
+            echo "JWT_SECRET=test-jwt-secret" >> $GITHUB_ENV
           fi
 
       - name: Run DB migrations (if alembic present under server/)
@@ -130,13 +136,19 @@ jobs:
             echo "No alembic config under server/ - skipping migrations"
           fi
 
+      - name: Debug repo layout before tests
+        run: |
+          echo "Root files:"
+          ls -la
+          echo "server/ files:"
+          ls -la server || true
+          echo "tests/ files:"
+          ls -la tests || true
+
       - name: Run backend tests (pytest)
-        env:
-          DATABASE_URL: ${{ env.DATABASE_URL }}
-          JWT_SECRET_KEY: ${{ env.JWT_SECRET_KEY }}
-          PYTHONPATH: .
         run: |
           set -e
+          # Run pytest from repo root so tests/ is found and tests see $DATABASE_URL and $JWT_SECRET_KEY
           if [ -d tests ] && ls tests/*.py >/dev/null 2>&1; then
             python -m pytest -q
           else
