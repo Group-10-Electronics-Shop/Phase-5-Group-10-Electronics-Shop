@@ -1,32 +1,37 @@
 import React from "react";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
-import LoginPage from "./pages/Login";
-import Profile from "./pages/Profile";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import Login from "./pages/Login";
 import Register from "./pages/Register";
-import ProtectedRoute from "./components/ProtectedRoute";
+import Profile from "./pages/Profile";
+import Orders from "./pages/Orders";
+import Wishlist from "./pages/Wishlist";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
-export default function App(){
+export default function App() {
   return (
-    <div>
-      <nav style={{padding:12, borderBottom:"1px solid #eee"}}>
-        <Link to="/">Home</Link>{" | "}
-        <Link to="/products">Products</Link>{" | "}
-        <Link to="/profile">Profile</Link>{" | "}
-        <Link to="/login">Login</Link>{" | "}
-        <Link to="/register">Register</Link>
-      </nav>
-      <Routes>
-        <Route path="/" element={<Home/>} />
-        <Route path="/products" element={<Products/>} />
-        <Route path="/products/:id" element={<ProductDetail/>} />
-        <Route path="/login" element={<LoginPage/>} />
-        <Route path="/register" element={<Register/>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile/></ProtectedRoute>} />
-        <Route path="*" element={<div style={{padding:20}}>Not found</div>} />
-      </Routes>
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <div className="flex-grow">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+        </Routes>
+      </div>
+      <Footer />
     </div>
   );
 }

@@ -5,7 +5,7 @@ Pytest configuration and fixtures for Electronics Shop API tests
 import pytest
 import tempfile
 import os
-from server import create_app
+from app import create_app
 from server.models.database import db
 
 class TestConfig:

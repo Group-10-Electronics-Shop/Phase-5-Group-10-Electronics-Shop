@@ -1,42 +1,63 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { register as apiRegister } from "../api/auth";
+// src/pages/Register.jsx
+import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { registerUser } from "../features/auth/authSlice";
+import { useNavigate, Link } from "react-router-dom";
 
-export default function Register(){
-  const [email,setEmail]=useState("");
-  const [first_name,setFirst]=useState("");
-  const [last_name,setLast]=useState("");
-  const [password,setPassword]=useState("");
-  const [msg,setMsg]=useState(null);
-  const nav = useNavigate();
+export default function Register() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const submit = async e => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      const payload = { email, password, first_name, last_name };
-      const res = await apiRegister(payload);
-      if (res.success) {
-        setMsg("Registered — redirecting to login...");
-        setTimeout(()=>nav("/login"),800);
-      } else {
-        setMsg(JSON.stringify(res.errors || res));
-      }
-    } catch (err) {
-      setMsg("Register failed: " + (err?.response?.data?.message || err.message));
-    }
+    dispatch(registerUser({ name, email, password }))
+      .unwrap()
+      .then(() => navigate("/login"));
   };
 
   return (
-    <div style={{padding:20}}>
-      <h2>Register</h2>
-      {msg && <div style={{marginBottom:12,color:"crimson"}}>{msg}</div>}
-      <form onSubmit={submit} style={{maxWidth:420}}>
-        <div><label>First name</label><input value={first_name} onChange={e=>setFirst(e.target.value)} required /></div>
-        <div><label>Last name</label><input value={last_name} onChange={e=>setLast(e.target.value)} required /></div>
-        <div><label>Email</label><input value={email} onChange={e=>setEmail(e.target.value)} type="email" required /></div>
-        <div><label>Password</label><input value={password} onChange={e=>setPassword(e.target.value)} type="password" required /></div>
-        <div style={{marginTop:10}}><button type="submit">Register</button></div>
-      </form>
+    <div className="flex justify-center items-center min-h-screen bg-gray-50">
+      <div className="w-full max-w-md bg-white p-8 shadow-lg rounded-lg">
+        <h1 className="text-2xl font-bold text-center mb-6">Register</h1>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Full Name"
+            className="w-full p-3 border rounded-lg focus:ring focus:ring-green-300"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            className="w-full p-3 border rounded-lg focus:ring focus:ring-green-300"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full p-3 border rounded-lg focus:ring focus:ring-green-300"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button
+            type="submit"
+            className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition"
+          >
+            Register
+          </button>
+        </form>
+        <p className="mt-4 text-center">
+          Already have an account?{" "}
+          <Link to="/login" className="text-green-600 hover:underline">
+            Login
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

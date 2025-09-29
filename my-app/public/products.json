@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "name": "Smartphone X",
+    "category": "Smartphones",
+    "price": 999,
+    "image": "/images/smartphone-x.jpg",
+    "tags": ["flash", "bestselling"]
+  },
+  {
+    "id": 2,
+    "name": "Laptop Pro",
+    "category": "Laptops",
+    "price": 1499,
+    "image": "/images/laptop-pro.jpg",
+    "tags": ["new"]
+  }
+]
