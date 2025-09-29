@@ -2,14 +2,13 @@ name: CI - PR checks
 
 on:
   pull_request:
-    branches: [ main ]
 
 jobs:
   frontend-check:
-    name: frontend-check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Detect frontend directory (client | my-app)
         id: detect_frontend
@@ -33,14 +32,13 @@ jobs:
         run: |
           set -e
           cd "${{ steps.detect_frontend.outputs.frontend_dir }}"
-          echo "Running frontend tasks in: $(pwd)"
+          echo "Running frontend steps in $(pwd)"
           npm ci || npm install
-          # Do not fail the whole workflow if frontend tests fail (frontend often comes from forks)
           npm test --silent || echo "Frontend tests exited with non-zero status"
 
   backend-check:
-    name: backend-check
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:15
@@ -48,23 +46,26 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
         options: >-
-          --health-cmd pg_isready --health-interval=10s --health-timeout=5s --health-retries=5
+          --health-cmd "pg_isready -U postgres" --health-interval 2s --health-timeout 5s --health-retries 10
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.8'
 
-      - name: Show runner info (debug)
+      - name: Show debug info
         run: |
           python --version
-          node --version || true
-          uname -a
-          pwd
+          which python || true
+          which pip || true
+          echo "PWD: $(pwd)"
           ls -la
 
       - name: Ensure pg_isready is available
@@ -76,81 +77,79 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/server/requirements*.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install backend deps if present
+      - name: Install backend deps (incl. pytest)
         run: |
           set -e
           python -m pip install --upgrade pip
           if [ -f server/requirements.txt ]; then
             python -m pip install -r server/requirements.txt
-          elif [ -f requirements.txt ]; then
-            python -m pip install -r requirements.txt
           else
-            echo "No requirements file found; installing minimal deps for tests"
             python -m pip install pytest flask
           fi
+          python -m pip install pytest
+
+      - name: Export environment & PYTHONPATH (supports secrets + safe fallbacks)
+        run: |
+          if [ -n "${{ secrets.DATABASE_URL }}" ]; then
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
+          else
+            echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_db" >> $GITHUB_ENV
+          fi
+
+          if [ -n "${{ secrets.JWT_SECRET_KEY }}" ]; then
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET_KEY }}" >> $GITHUB_ENV
+          elif [ -n "${{ secrets.JWT_SECRET }}" ]; then
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $GITHUB_ENV
+          else
+            echo "JWT_SECRET=test-jwt-secret" >> $GITHUB_ENV
+          fi
+
+          echo "PYTHONPATH=${{ github.workspace }}" >> $GITHUB_ENV
+          echo "PS: DATABASE_URL will be $DATABASE_URL"
 
       - name: Wait for Postgres to be ready
         run: |
           for i in $(seq 1 30); do
-            pg_isready -h localhost -p 5432 -U postgres && { echo "Postgres ready"; break; }
-            echo "Waiting for postgres... ($i/30)"
-            sleep 2
+            pg_isready -h localhost -p 5432 -U postgres >/dev/null 2>&1 && { echo "Postgres is ready"; break; }
+            echo "Waiting for postgres... ($i/30)";
+            sleep 2;
             if [ "$i" -eq 30 ]; then
-              echo "Postgres did not become ready in time"
-              exit 1
+              echo "Postgres did not become ready in time";
+              exit 1;
             fi
           done
 
-      - name: Export test env vars (DB + JWT fallback)
-        run: |
-          # Ensure the DB value tests expect is available to subsequent steps
-          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_db" >> $GITHUB_ENV
-
-          # Prefer repository secret names if available; set both names to be robust.
-          if [ -n "${{ secrets.JWT_SECRET_KEY }}" ]; then
-            echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> $GITHUB_ENV
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET_KEY }}" >> $GITHUB_ENV
-          elif [ -n "${{ secrets.JWT_SECRET }}" ]; then
-            echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET }}" >> $GITHUB_ENV
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $GITHUB_ENV
-          else
-            # Forked PRs and some runs won't have access to repo secrets — use a harmless fallback
-            echo "JWT_SECRET_KEY=test-jwt-secret" >> $GITHUB_ENV
-            echo "JWT_SECRET=test-jwt-secret" >> $GITHUB_ENV
-          fi
-
-      - name: Run DB migrations (if alembic present under server/)
+      - name: Run Alembic migrations (best-effort)
         run: |
           set -e
           if [ -f server/alembic.ini ] || [ -d server/alembic ]; then
             python -m pip install alembic || true
             cd server
             export DATABASE_URL=${DATABASE_URL}
-            alembic upgrade head || echo "alembic upgrade failed (continuing)"
+            python -m alembic upgrade head || echo "alembic upgrade failed (continuing)"
             cd ..
           else
             echo "No alembic config under server/ - skipping migrations"
           fi
 
-      - name: Debug repo layout before tests
+      - name: Debug files before running tests
         run: |
           echo "Root files:"
           ls -la
-          echo "server/ files:"
+          echo "server files:"
           ls -la server || true
-          echo "tests/ files:"
+          echo "tests files (root):"
           ls -la tests || true
 
       - name: Run backend tests (pytest)
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          JWT_SECRET: ${{ env.JWT_SECRET }}
+          PYTHONPATH: ${{ env.PYTHONPATH }}
         run: |
           set -e
-          # Run pytest from repo root so tests/ is found and tests see $DATABASE_URL and $JWT_SECRET_KEY
-          if [ -d tests ] && ls tests/*.py >/dev/null 2>&1; then
-            python -m pytest -q
-          else
-            echo "No tests folder found; skipping pytest"
-          fi
+          python -m pytest -q
