@@ -1,4 +1,3 @@
-// src/pages/Profile.jsx
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../features/auth/authSlice";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +29,9 @@ export default function Profile() {
         </p>
         <p>
           <span className="font-semibold">Email:</span> {user.email}
+        </p>
+        <p>
+          <span className="font-semibold">Role:</span> {user.role}
         </p>
         <button
           onClick={handleLogout}

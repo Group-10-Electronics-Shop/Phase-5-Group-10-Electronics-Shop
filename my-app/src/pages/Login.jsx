@@ -12,11 +12,13 @@ export default function Login() {
   const { status, error } = useSelector((state) => state.auth);
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    dispatch(loginUser({ email, password }))
-      .unwrap()
-      .then(() => navigate("/profile"));
-  };
+  e.preventDefault();
+  dispatch(loginUser({ email, password }))
+    .unwrap()
+    .then(() => navigate("/profile"))  // your Profile page will read real user
+    .catch((err) => console.error(err));
+};
+
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50">
