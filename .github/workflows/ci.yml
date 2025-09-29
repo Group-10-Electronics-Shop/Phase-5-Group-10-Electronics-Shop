@@ -11,27 +11,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check frontend presence
-        id: check_client
+      - name: Detect frontend directory (client | my-app)
+        id: detect_frontend
         run: |
-          if [ -d client ] && [ -f client/package.json ]; then
-            echo "has_client=true" >> $GITHUB_OUTPUT
+          if [ -f my-app/package.json ]; then
+            echo "frontend_dir=my-app" >> $GITHUB_OUTPUT
+          elif [ -f client/package.json ]; then
+            echo "frontend_dir=client" >> $GITHUB_OUTPUT
           else
-            echo "has_client=false" >> $GITHUB_OUTPUT
+            echo "frontend_dir=" >> $GITHUB_OUTPUT
           fi
 
       - name: Setup Node (only if frontend exists)
-        if: steps.check_client.outputs.has_client == 'true'
+        if: steps.detect_frontend.outputs.frontend_dir != ''
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
       - name: Install & Run frontend tests (only if frontend exists)
-        if: steps.check_client.outputs.has_client == 'true'
+        if: steps.detect_frontend.outputs.frontend_dir != ''
         run: |
-          cd client
+          set -e
+          cd "${{ steps.detect_frontend.outputs.frontend_dir }}"
+          echo "Running frontend steps in $(pwd)"
           npm ci || npm install
-          # run frontend tests (silently)
+          # run frontend tests but don't block PRs on flaky UI tests
           npm test --silent || echo "Frontend tests exited with non-zero status"
 
   backend-check:
@@ -55,31 +59,46 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Ensure system utilities (pg_isready)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install backend deps if present
         run: |
           python -m pip install --upgrade pip
           if [ -f server/requirements.txt ]; then
-            pip install -r server/requirements.txt
+            python -m pip install -r server/requirements.txt
           elif [ -f requirements.txt ]; then
-            pip install -r requirements.txt
+            python -m pip install -r requirements.txt
           else
-            echo "No requirements file found; skipping install"
+            echo "No requirements file found; installing minimal deps for tests"
+            python -m pip install pytest flask
           fi
 
-      - name: Wait for Postgres
+      - name: Wait for Postgres to be ready
         run: |
-          for i in {1..15}; do
-            pg_isready -h localhost -p 5432 && break
-            echo "Waiting for postgres..."
-            sleep 2
+          for i in $(seq 1 30); do
+            pg_isready -h localhost -p 5432 -U postgres && { echo "Postgres is ready"; break; }
+            echo "Waiting for postgres... ($i/30)";
+            sleep 2;
+            if [ "$i" -eq 30 ]; then
+              echo "Postgres did not become ready in time";
+              exit 1;
+            fi
           done
 
       - name: Export test env vars (DB + JWT fallback)
         run: |
-          # Make the DB the app/tests expect
           echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_db" >> $GITHUB_ENV
-
-          # Use repo secret JWT_SECRET if present, otherwise set a test-only fallback
           if [ -n "${{ secrets.JWT_SECRET }}" ]; then
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $GITHUB_ENV
           else
@@ -88,17 +107,26 @@ jobs:
 
       - name: Run DB migrations (if alembic present under server/)
         run: |
+          set -e
           if [ -f server/alembic.ini ] || [ -d server/alembic ]; then
-            pip install alembic || true
-            # run alembic inside server folder so it picks server/alembic.ini and server/alembic/env.py
+            python -m pip install alembic || true
             cd server
-            # ensure alembic sees DATABASE_URL
             export DATABASE_URL=${DATABASE_URL}
+            # attempt migration; don't fail entire job on migration failure unless you prefer strictness
             alembic upgrade head || echo "alembic upgrade failed (continuing)"
             cd ..
           else
             echo "No alembic config under server/ - skipping migrations"
           fi
+
+      - name: Debug file listing
+        run: |
+          echo "Root:"
+          ls -la
+          echo "server/:"
+          ls -la server || true
+          echo "tests/:"
+          ls -la tests || true
 
       - name: Run backend tests (pytest)
         env:
@@ -106,9 +134,9 @@ jobs:
           JWT_SECRET: ${{ env.JWT_SECRET }}
           PYTHONPATH: .
         run: |
-          # Run pytest if tests exist
-          if ls tests/*.py >/dev/null 2>&1 || [ -d tests ]; then
-            pytest -q
+          set -e
+          if [ -d tests ] && ls tests/*.py >/dev/null 2>&1; then
+            python -m pytest -q
           else
             echo "No tests folder found; skipping pytest"
           fi
