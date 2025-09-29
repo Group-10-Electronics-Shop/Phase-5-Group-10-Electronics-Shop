@@ -1,8 +1,6 @@
 import os
 from flask import Flask, jsonify
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager as FlaskJWTManager
-from datetime import datetime
 from flask_jwt_extended import JWTManager
 from datetime import datetime
 from dotenv import load_dotenv
@@ -103,6 +101,7 @@ def _register_public_routes(app, jwt, db):
 
 def _register_public_routes(app):
     """Register simple public/demo routes (health + sample products)."""
+    
     @app.route("/health", methods=["GET"])
     def health():
         return jsonify({"status": "ok", "started_at": START_TIME}), 200
