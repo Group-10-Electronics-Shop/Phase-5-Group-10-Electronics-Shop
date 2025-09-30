@@ -41,3 +41,9 @@ config = {
     "testing": TestingConfig,
     "default": DevelopmentConfig,
 }
+
+
+# backward-compatibility shim expected by server.run
+def config_by_name(name):
+    """Return config class for given environment name (fallback to 'default')."""
+    return config.get(name, config["default"])
