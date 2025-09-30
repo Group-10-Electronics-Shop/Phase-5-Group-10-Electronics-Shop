@@ -15,9 +15,9 @@ depends_on = None
 
 def upgrade():
   
-    from server.models.database import create_tables
+    from server.models.alembic_helpers import create_tables
     create_tables()
 
 def downgrade():
-    from server.models.database import drop_tables
+    from server.models.alembic_helpers import drop_tables
     drop_tables()
