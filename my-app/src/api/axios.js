@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api", // adjust for backend
+  baseURL: "/api", // relative path so Vite forwards to Flask backend
 });
 
 export default api;
