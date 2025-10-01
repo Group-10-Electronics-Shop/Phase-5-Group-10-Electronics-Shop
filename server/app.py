@@ -28,8 +28,15 @@ def create_app(config_name=None):
     jwt = JWTManager(app)
     Migrate(app, db)
 
-    # CORS configuration
-    CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}})
+    # ✅ CORS configuration - allow React dev server ports
+    CORS(app, resources={r"/api/*": {
+        "origins": [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000"
+        ]
+    }})
 
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix="/api/auth")

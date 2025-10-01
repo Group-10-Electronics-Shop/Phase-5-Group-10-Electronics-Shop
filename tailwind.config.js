@@ -2,10 +2,17 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,jsx,ts,tsx}", // Make sure all JSX/TSX files are included
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        primary: {
+          DEFAULT: '#DB4444',
+          hover: '#C23939'
+        }
+      }
+    },
   },
   plugins: [],
-};
+}
