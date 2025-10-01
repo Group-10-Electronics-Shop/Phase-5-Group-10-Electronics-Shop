@@ -25,6 +25,18 @@ htmlcov/
 *.swp
 .DS_Store
 
+# local frontends/backups
+.backups_frontends/
+quick-frontend/
+my-app/client/
+
+# check it
+tail -n +1 .gitignore
+
+# local alembic backup
+server/alembic/versions/0001_create_tables.py.bak
+GITIGN
+
 # server artifacts
 server/server.log
 server/server.pid

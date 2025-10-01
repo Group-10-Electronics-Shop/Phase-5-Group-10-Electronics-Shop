@@ -507,4 +507,74 @@ class DatabaseUtils:
             ).count()
             return usage_count < coupon.usage_limit_per_user
         
-        return True
+        return True# --- helpers used by alembic migration 0001_create_tables.py ---
+def _get_db_url_from_env():
+    import os
+    return os.environ.get("DATABASE_URL") or os.environ.get("SQLALCHEMY_DATABASE_URI")
+
+def _import_all_model_modules():
+    """
+    Import all modules under server.models to ensure model classes are registered
+    on the declarative Base.metadata before calling create_all().
+    """
+    import pkgutil, importlib
+    try:
+        import server.models as models_pkg
+    except Exception:
+        # best-effort - fall back to relative package
+        import server as _server
+        import server.models as models_pkg
+
+    for _finder, modname, _ispkg in pkgutil.iter_modules(models_pkg.__path__):
+        # avoid importing this file as a module (database.py)
+        if modname in ("database",):
+            continue
+        importlib.import_module(f"server.models.{modname}")
+
+def create_tables():
+    """
+    Called by alembic migration to create all tables.
+    Ensures model modules are loaded and then runs Base.metadata.create_all(engine).
+    """
+    from sqlalchemy import create_engine
+    db_url = _get_db_url_from_env()
+    if not db_url:
+        raise RuntimeError(
+            "DATABASE_URL or SQLALCHEMY_DATABASE_URI not set in environment. "
+            "Alembic expects one of these to be defined."
+        )
+
+    # import model modules so they register on the Base metadata
+    _import_all_model_modules()
+
+    # try to find Base in this module or in server.models
+    try:
+        meta = Base.metadata  # if Base is defined in this file
+    except Exception:
+        try:
+            from server.models import Base as _Base
+            meta = _Base.metadata
+        except Exception as exc:
+            raise RuntimeError("Could not find SQLAlchemy Base to create tables") from exc
+
+    engine = create_engine(db_url)
+    meta.create_all(engine)
+
+
+def drop_tables():
+    """
+    Reverse of create_tables() — drop all tables from metadata.
+    """
+    from sqlalchemy import create_engine
+    db_url = _get_db_url_from_env()
+    if not db_url:
+        raise RuntimeError("DATABASE_URL not set in environment.")
+    _import_all_model_modules()
+    try:
+        meta = Base.metadata
+    except Exception:
+        from server.models import Base as _Base
+        meta = _Base.metadata
+    engine = create_engine(db_url)
+    meta.drop_all(engine)
+# --- end helpers ---
