@@ -29,7 +29,7 @@ Our platform provides customers access to:
 
 **A modern, full-stack e-commerce platform for electronics**
 
-[Live Demo](https://shopatelec.netlify.app/) 
+[Live Demo](https://shopatelec.netlify.app) 
 
 • [Report Bug](#-support) • [Request Feature](#-support)
 
