@@ -1,33 +1,73 @@
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser } from "../features/auth/authSlice";
+import { useNavigate, Link } from "react-router-dom";
 
-import React, { useContext, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("user"); // added role selection
 
-export default function LoginPage(){
-  const { login } = useContext(AuthContext);
-  const [email,setEmail]=useState(""),[password,setPassword]=useState(""),[error,setError]=useState(null);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { status, error } = useSelector((state) => state.auth);
 
-  async function onSubmit(e){
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setError(null);
-    try {
-      await login(email,password);
-      navigate("/");
-    } catch (err){
-      setError(err?.response?.data?.message || err?.message || "Login failed");
-    }
-  }
+    dispatch(loginUser({ email, password, role }))
+      .unwrap()
+      .then(() => navigate("/profile"))
+      .catch((err) => console.error(err));
+  };
 
   return (
-    <div style={{maxWidth:480, margin:"3rem auto", padding:20}}>
-      <h2>Login</h2>
-      <form onSubmit={onSubmit}>
-        <div><label>Email</label><br/><input value={email} onChange={e=>setEmail(e.target.value)} type="email" required/></div>
-        <div style={{marginTop:8}}><label>Password</label><br/><input value={password} onChange={e=>setPassword(e.target.value)} type="password" required/></div>
-        {error && <div style={{color:"crimson", marginTop:8}}>{error}</div>}
-        <button style={{marginTop:12}} type="submit">Login</button>
-      </form>
+    <div className="flex justify-center items-center min-h-screen bg-gray-50">
+      <div className="w-full max-w-md bg-white p-8 shadow-lg rounded-lg">
+        <h1 className="text-2xl font-bold text-center mb-6">Login</h1>
+        {error && <p className="text-red-500 text-center">{error}</p>}
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <input
+            type="email"
+            placeholder="Email"
+            className="w-full p-3 border rounded-lg focus:ring focus:ring-blue-300"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full p-3 border rounded-lg focus:ring focus:ring-blue-300"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          {/* Role Selector now in Login */}
+          <select
+            className="w-full p-3 border rounded-lg"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+          >
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+
+          <button
+            type="submit"
+            disabled={status === "loading"}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
+          >
+            {status === "loading" ? "Logging in..." : "Login"}
+          </button>
+        </form>
+        <p className="mt-4 text-center">
+          Don’t have an account?{" "}
+          <Link to="/register" className="text-blue-600 hover:underline">
+            Register
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
