@@ -1,33 +1,68 @@
 import React, { useEffect, useState } from "react";
-import client from "../api/client";
-import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProducts } from "../features/products/productSlice";
+import ProductList from "../components/ProductList";
 
-export default function Products(){
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(()=>{ let mounted=true;
-    client.get("/api/products")
-      .then(r => { if(mounted) setProducts(r.data?.data?.products || []); })
-      .catch(e=>console.error("products error",e))
-      .finally(()=> mounted && setLoading(false));
-    return ()=> mounted=false;
-  },[]);
-  if(loading) return <div style={{padding:20}}>Loading products…</div>;
+export default function Products() {
+  const dispatch = useDispatch();
+  const { items: products, status } = useSelector((state) => state.products);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  useEffect(() => {
+    if (status === "idle") dispatch(fetchProducts());
+  }, [dispatch, status]);
+
+  if (status === "loading")
+    return <p className="text-center py-10">Loading products...</p>;
+  if (status === "failed")
+    return (
+      <p className="text-center text-red-500 py-10">
+        Failed to load products.
+      </p>
+    );
+
+  // Unique categories
+  const categories = [
+    ...new Set(products.map((p) => p.category).filter(Boolean)),
+  ];
+
+  // Filtered products by category
+  const filteredProducts = selectedCategory
+    ? products.filter((p) => p.category === selectedCategory)
+    : products;
+
   return (
-    <div style={{padding:20}}>
-      <h2>Products</h2>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12}}>
-        {products.map(p => (
-          <div key={p.id} style={{border:"1px solid #eee",padding:12,borderRadius:8}}>
-            <h3>{p.name}</h3>
-            <div style={{fontSize:13, color:"#666"}}>{p.brand} — {p.model}</div>
-            <div style={{marginTop:8}}>${p.current_price?.toFixed(2)}</div>
-            <div style={{marginTop:8}}>
-              <Link to={`/products/${p.id}`}>View</Link>
-            </div>
-          </div>
-        ))}
-      </div>
+    <div className="container mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Sidebar */}
+      <aside className="col-span-1 bg-gray-100 p-4 rounded-lg shadow space-y-4">
+        <h2 className="font-bold text-lg">Categories</h2>
+        <ul className="space-y-2">
+          <li
+            onClick={() => setSelectedCategory(null)}
+            className={`cursor-pointer font-medium ${
+              !selectedCategory && "text-blue-600"
+            }`}
+          >
+            All
+          </li>
+          {categories.map((cat) => (
+            <li
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`cursor-pointer font-medium ${
+                selectedCategory === cat && "text-blue-600"
+              }`}
+            >
+              {cat}
+            </li>
+          ))}
+        </ul>
+      </aside>
+
+      {/* Products Grid */}
+      <main className="col-span-3">
+        <ProductList products={filteredProducts} />
+      </main>
     </div>
   );
 }

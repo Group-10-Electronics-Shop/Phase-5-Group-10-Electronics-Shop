@@ -1,42 +1,71 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { register as apiRegister } from "../api/auth";
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { registerUser } from "../features/auth/authSlice";
+import { useNavigate, Link } from "react-router-dom";
 
-export default function Register(){
-  const [email,setEmail]=useState("");
-  const [first_name,setFirst]=useState("");
-  const [last_name,setLast]=useState("");
-  const [password,setPassword]=useState("");
-  const [msg,setMsg]=useState(null);
-  const nav = useNavigate();
+export default function Register() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const role = "user"; // always user when registering
 
-  const submit = async e => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { status, error } = useSelector((state) => state.auth);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      const payload = { email, password, first_name, last_name };
-      const res = await apiRegister(payload);
-      if (res.success) {
-        setMsg("Registered — redirecting to login...");
-        setTimeout(()=>nav("/login"),800);
-      } else {
-        setMsg(JSON.stringify(res.errors || res));
-      }
-    } catch (err) {
-      setMsg("Register failed: " + (err?.response?.data?.message || err.message));
-    }
+    dispatch(registerUser({ name, email, password, role }))
+      .unwrap()
+      .then(() => navigate("/profile"));
   };
 
   return (
-    <div style={{padding:20}}>
-      <h2>Register</h2>
-      {msg && <div style={{marginBottom:12,color:"crimson"}}>{msg}</div>}
-      <form onSubmit={submit} style={{maxWidth:420}}>
-        <div><label>First name</label><input value={first_name} onChange={e=>setFirst(e.target.value)} required /></div>
-        <div><label>Last name</label><input value={last_name} onChange={e=>setLast(e.target.value)} required /></div>
-        <div><label>Email</label><input value={email} onChange={e=>setEmail(e.target.value)} type="email" required /></div>
-        <div><label>Password</label><input value={password} onChange={e=>setPassword(e.target.value)} type="password" required /></div>
-        <div style={{marginTop:10}}><button type="submit">Register</button></div>
-      </form>
+    <div className="flex justify-center items-center min-h-screen bg-gray-50">
+      <div className="w-full max-w-md bg-white p-8 shadow-lg rounded-lg">
+        <h1 className="text-2xl font-bold text-center mb-6">Register</h1>
+        {error && <p className="text-red-500 text-center">{error}</p>}
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Name"
+            className="w-full p-3 border rounded-lg"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            className="w-full p-3 border rounded-lg"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full p-3 border rounded-lg"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          <button
+            type="submit"
+            disabled={status === "loading"}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
+          >
+            {status === "loading" ? "Registering..." : "Register"}
+          </button>
+        </form>
+        <p className="mt-4 text-center">
+          Already have an account?{" "}
+          <Link to="/login" className="text-blue-600 hover:underline">
+            Login
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
