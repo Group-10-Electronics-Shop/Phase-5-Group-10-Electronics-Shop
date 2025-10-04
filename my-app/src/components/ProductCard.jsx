@@ -1,39 +1,30 @@
 import React from "react";
 
-function ProductCard({ product, isAdmin, onDelete, onEdit }) {
+export default function ProductCard({ product = {}, onEdit, onDelete }) {
+  const price = (product?.current_price != null)
+    ? product.current_price
+    : (product?.price != null ? product.price : 0);
+  const formatted = "KES " + Number(price || 0).toLocaleString();
+
   return (
-    <div className="border rounded-lg shadow p-4 flex flex-col">
-      <img
-        src={product.image_url}
-        alt={product.name}
-        className="h-40 w-full object-cover rounded mb-3"
-      />
+    <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
+      <h3 style={{ margin: "0 0 8px 0" }}>{product?.name}</h3>
+      <p style={{ margin: "0 0 6px 0" }}>{product?.description}</p>
+      <p style={{ margin: "0 0 6px 0", fontWeight: 600 }}>{formatted}</p>
+      <p style={{ margin: "0 0 8px 0", color: "#666" }}>{product?.category_name || product?.category_id || "Category:"}</p>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" onClick={() => {
+          console.log("[DEV] ProductCard: Edit clicked", product?.id, "onEdit:", typeof onEdit);
+          if (typeof onEdit === "function") onEdit(product?.id);
+        }}>Edit</button>
 
-      <h2 className="text-lg font-bold">{product.name}</h2>
-      <p className="text-gray-600">{product.description}</p>
-      <p className="font-semibold">KES {product.price}</p>
-      <p className="text-sm text-gray-500">{product.category}</p>
-
-      {/* ✅ Admin Controls */}
-      {isAdmin && (
-        <div className="mt-3 flex gap-2">
-          <button
-            onClick={() => onEdit(product)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => onDelete(product.id)}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-          >
-            Delete
-          </button>
-        </div>
-      )}
+        <button type="button" onClick={() => {
+          console.log("[DEV] ProductCard: Delete clicked", product?.id, "onDelete:", typeof onDelete);
+          if (typeof onDelete === "function") onDelete(product?.id);
+        }} style={{ background: "#ff6b6b", color: "#fff" }}>
+          Delete
+        </button>
+      </div>
     </div>
   );
 }
-
-export default ProductCard;
-
