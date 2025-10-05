@@ -34,7 +34,7 @@ export default function AdminProducts() {
 
   async function handleSaved(resp) {
     setShowForm(false);
-    // reload list — safer than merging
+    
     await load();
   }
 

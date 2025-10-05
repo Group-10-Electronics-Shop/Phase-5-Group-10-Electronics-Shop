@@ -1,38 +1,31 @@
-import React from "react";
-import { isAdmin as authIsAdmin } from "../utils/auth";
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { isAdmin } from '../utils/auth';
 
-export default function ProductCard({ product, onView, onEdit, onDelete, isAdmin }) {
-  const admin = (typeof isAdmin === 'boolean') ? isAdmin : authIsAdmin();
+export default function ProductCard({ product, onEdit, onDelete }) {
+  const navigate = useNavigate();
 
   return (
-    <article className="card" style={{display:'flex', flexDirection:'column', gap:8}}>
-      <div style={{position:'relative'}}>
-        <img
-          src={product.image_url || '/images/placeholder.png'}
-          alt={product.name || 'product'}
-          style={{width:'100%', height:160, objectFit:'cover', borderRadius:8}}
-          onError={(e)=> e.currentTarget.src = "/images/placeholder.png"}
-        />
-        {product.badge && (
-          <div style={{
-            position:'absolute', left:8, top:8, background:'#ef4444', color:'#fff',
-            padding:'4px 8px', borderRadius:6, fontSize:12
-          }}>{product.badge}</div>
-        )}
-      </div>
-
-      <div style={{display:'flex', flexDirection:'column', gap:4}}>
-        <div style={{fontWeight:700}}>{product.name}</div>
-        {product.category && <div style={{fontSize:12, color:'#6b7280'}}>{product.category}</div>}
-        <div style={{fontWeight:600}}>{typeof product.price === 'number' ? `KES ${product.price.toLocaleString()}` : product.price}</div>
-        <div style={{display:'flex', gap:8, marginTop:6}}>
-          <button className="btn-sm" onClick={()=> onView?.(product)}>View</button>
-          {admin && <>
-            <button className="btn-sm" onClick={()=> onEdit?.(product)}>Edit</button>
-            <button className="btn-sm btn-danger" onClick={()=> onDelete?.(product)}>Delete</button>
-          </>}
+    <div className="product-card">
+      <img src={product.image} alt={product.name} className="w-full h-40 object-contain" />
+      <div className="mt-2">
+        <h3 className="font-medium">{product.name}</h3>
+        <div className="text-sm text-gray-500">{product.category}</div>
+        <div className="mt-1 font-semibold">KES {product.price.toLocaleString()}</div>
+        <div className="mt-2 flex gap-2">
+          <Link className="btn-sm" to={`/products/${product.id}`}>View</Link>
+          {isAdmin() && (
+            <>
+              <button className="btn-sm" onClick={() => onEdit ? onEdit(product) : navigate(`/products/${product.id}/edit`)}>
+                Edit
+              </button>
+              <button className="btn-sm danger" onClick={() => onDelete && onDelete(product.id)}>
+                Delete
+              </button>
+            </>
+          )}
         </div>
       </div>
-    </article>
+    </div>
   );
 }

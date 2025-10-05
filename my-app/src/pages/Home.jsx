@@ -1,148 +1,85 @@
-import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchProducts } from "../features/products/productSlice";
-import { Link } from "react-router-dom";
-import homeBanner from "../assets/home-banner.jpg";
+import React from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 
-export default function Home() {
-  const dispatch = useDispatch();
-  const { items: products, status } = useSelector((state) => state.products);
-  const [selectedCategory, setSelectedCategory] = useState(null);
+const CATEGORIES = [
+  "All","Phones","Televisions","Computers","Accessories","Cameras",
+  "Tablets","Audio","Gaming","Wearables","Desktops","Laptops","Kitchenware"
+];
 
-  useEffect(() => {
-    if (status === "idle") dispatch(fetchProducts());
-  }, [dispatch, status]);
+export default function Header(){
+  const navigate = useNavigate();
 
-  if (status === "loading")
-    return <p className="text-center py-10">Loading products...</p>;
-  if (status === "failed")
-    return <p className="text-center text-red-500 py-10">Failed to load products.</p>;
+  function onSearchSubmit(e){
+    e.preventDefault();
+    const q = e.target.q.value.trim();
+    navigate(q ? `/products?q=${encodeURIComponent(q)}` : "/products");
+  }
 
-  const filteredProducts = selectedCategory
-    ? products.filter((p) => p.category === selectedCategory)
-    : products;
-
-  const flashSales = filteredProducts.filter((p) => p.tags?.includes("flash"));
-  const bestselling = filteredProducts.filter((p) =>
-    p.tags?.includes("bestselling")
-  );
-  const newArrivals = filteredProducts.filter((p) => p.tags?.includes("new"));
-
-  const categories = [...new Set(products.map((p) => p.category))];
+  function goCat(cat){
+    navigate(cat === "All" ? "/products" : `/products?category=${encodeURIComponent(cat)}`);
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-12">
-      {/* Banner */}
-      <div className="relative">
-        <img
-          src={homeBanner}
-          alt="Banner"
-          className="w-full h-64 md:h-96 object-cover rounded-lg shadow-lg"
-        />
-        <div className="absolute inset-0 flex flex-col justify-center items-center bg-black bg-opacity-30 text-white text-center p-4">
-          <h1 className="text-3xl md:text-5xl font-bold">Welcome to Electronics Shop</h1>
-          <p className="mt-2 text-lg md:text-2xl">Best Deals on Electronics</p>
+    <header className="app-header border-b bg-white">
+      {/* Top strip */}
+      <div className="header-inner header-top flex items-center justify-between px-4 py-2 text-sm">
+        <div className="brand font-semibold text-base">
+          <NavLink to="/">Electronics Shop</NavLink>
+        </div>
+        <div className="top-contact text-gray-600">
+          +254 711 012 345 · <NavLink to="/contact" className="underline">Contact</NavLink>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Sidebar */}
-        <aside className="col-span-1 bg-gray-100 p-4 rounded-lg shadow space-y-6">
-          <h2 className="font-bold text-lg">Categories</h2>
-          <ul className="space-y-2">
-            <li
-              onClick={() => setSelectedCategory(null)}
-              className={`cursor-pointer font-medium ${!selectedCategory && "text-blue-600"}`}
-            >
-              All
-            </li>
-            {categories.map((cat) => (
-              <li
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`cursor-pointer font-medium ${selectedCategory === cat && "text-blue-600"}`}
-              >
-                {cat}
-              </li>
-            ))}
+      {/* Main row */}
+      <div className="header-inner header-main flex flex-wrap items-center gap-4 px-4 py-3">
+        {/* Left: nav */}
+        <nav className="main-nav" aria-label="primary">
+          <ul className="flex flex-wrap items-center gap-4">
+            <li><NavLink to="/" className="hover:underline">Home</NavLink></li>
+            <li><NavLink to="/products" className="hover:underline">Products</NavLink></li>
+            <li><NavLink to="/orders" className="hover:underline">Orders</NavLink></li>
+            <li><NavLink to="/contact" className="hover:underline">Contact</NavLink></li>
+            <li><NavLink to="/about" className="hover:underline">About</NavLink></li>
           </ul>
-        </aside>
+        </nav>
 
-        {/* Main Content */}
-        <main className="col-span-3 space-y-10">
-          {flashSales.length > 0 && (
-            <section>
-              <h2 className="text-2xl font-bold mb-4">🔥 Flash Sales</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {flashSales.map((item) => (
-                  <Link
-                    key={item.id}
-                    to={`/products/${item.id}`}
-                    className="p-4 border rounded-lg shadow hover:shadow-lg block"
-                  >
-                    <img
-                      src={item.image_url || item.image}
-                      alt={item.name}
-                      className="mb-2 rounded h-48 w-full object-contain bg-gray-100"
-                    />
-                    <p className="font-semibold">{item.name}</p>
-                    <p className="text-gray-700 text-sm mb-1">{item.description}</p>
-                    <p className="text-red-500 font-bold">KES {item.price.toLocaleString()}</p>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
+        {/* Center: search */}
+        <form onSubmit={onSearchSubmit} className="ml-auto flex w-full max-w-xl">
+          <input
+            name="q"
+            placeholder="What are you looking for?"
+            aria-label="Search"
+            className="flex-1 border rounded-l px-3 py-2 outline-none focus:ring-2 focus:ring-gray-300"
+          />
+          <button type="submit" className="px-4 py-2 border border-l-0 rounded-r bg-black text-white">
+            Search
+          </button>
+        </form>
 
-          {bestselling.length > 0 && (
-            <section>
-              <h2 className="text-2xl font-bold mb-4">⭐ Bestselling</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {bestselling.map((item) => (
-                  <Link
-                    key={item.id}
-                    to={`/products/${item.id}`}
-                    className="p-4 border rounded-lg shadow hover:shadow-lg block"
-                  >
-                    <img
-                      src={item.image_url || item.image}
-                      alt={item.name}
-                      className="mb-2 rounded h-48 w-full object-contain bg-gray-100"
-                    />
-                    <p className="font-semibold">{item.name}</p>
-                    <p className="text-gray-700 text-sm mb-1">{item.description}</p>
-                    <p className="text-blue-600 font-bold">KES {item.price.toLocaleString()}</p>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {newArrivals.length > 0 && (
-            <section>
-              <h2 className="text-2xl font-bold mb-4">🆕 New Arrivals</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {newArrivals.map((item) => (
-                  <Link
-                    key={item.id}
-                    to={`/products/${item.id}`}
-                    className="p-4 border rounded-lg shadow hover:shadow-lg block"
-                  >
-                    <img
-                      src={item.image_url || item.image}
-                      alt={item.name}
-                      className="mb-2 rounded h-48 w-full object-contain bg-gray-100"
-                    />
-                    <p className="font-semibold">{item.name}</p>
-                    <p className="text-gray-700 text-sm mb-1">{item.description}</p>
-                    <p className="text-green-600 font-bold">KES {item.price.toLocaleString()}</p>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-        </main>
+        {/* Right: actions */}
+        <div className="right-group flex items-center gap-4 ml-auto">
+          <NavLink className="hover:underline" to="/wishlist">Wishlist</NavLink>
+          <NavLink className="hover:underline" to="/cart">Cart</NavLink>
+          <NavLink className="text-gray-600 hover:underline" to="/login">Login</NavLink>
+          <NavLink className="px-3 py-1 rounded bg-black text-white" to="/signup">Sign up</NavLink>
+        </div>
       </div>
-    </div>
+
+      {/* Category row */}
+      <div className="px-4 pb-3">
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              onClick={() => goCat(cat)}
+              className="px-3 py-1.5 rounded-full border hover:bg-gray-50 text-sm"
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+    </header>
   );
 }
