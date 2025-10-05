@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "name": "HAVIT HV-G92 Gamepad",
+    "description": "Wired gamepad with ergonomic design",
+    "price": 120000,
+    "category": "Gaming",
+    "image_url": "/images/havit-hv-g92-gamepad.svg",
+    "badge": "-30%"
+  },
+  {
+    "id": 2,
+    "name": "PlayStation 5",
+    "description": "Next-gen gaming console",
+    "price": 150000,
+    "category": "Gaming",
+    "image_url": "/images/playstation-5.svg",
+    "badge": "NEW"
+  },
+  {
+    "id": 3,
+    "name": "iPhone 14 Series",
+    "description": "Latest Apple iPhone series",
+    "price": 192000,
+    "category": "Phones",
+    "image_url": "/images/iphone-14-series.svg",
+    "badge": ""
+  },
+  {
+    "id": 4,
+    "name": "IPS LCD Gaming Monitor",
+    "description": "High refresh 144Hz gaming monitor",
+    "price": 65000,
+    "category": "Computers",
+    "image_url": "/images/ips-lcd-gaming-monitor.svg",
+    "badge": "-40%"
+  },
+  {
+    "id": 5,
+    "name": "AK-900 Wired Keyboard",
+    "description": "Mechanical keyboard with RGB",
+    "price": 16000,
+    "category": "Accessories",
+    "image_url": "/images/ak-900-wired-keyboard.svg",
+    "badge": ""
+  },
+  {
+    "id": 6,
+    "name": "Philips phone",
+    "description": "Affordable smartphone",
+    "price": 10000,
+    "category": "Phones",
+    "image_url": "/images/philips-phone.svg",
+    "badge": "-35%"
+  },
+  {
+    "id": 7,
+    "name": "Canon EOS DSLR Camera",
+    "description": "DSLR for creators",
+    "price": 70000,
+    "category": "Cameras",
+    "image_url": "/images/canon-eos-dslr-camera.svg",
+    "badge": "NEW"
+  },
+  {
+    "id": 8,
+    "name": "Samsung Galaxy S23",
+    "description": "Latest Samsung flagship smartphone",
+    "price": 120000,
+    "category": "Phones",
+    "image_url": "/images/samsung-galaxy-s23.svg",
+    "badge": ""
+  }
+]

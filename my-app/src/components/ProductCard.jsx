@@ -1,30 +1,38 @@
 import React from "react";
+import { isAdmin as authIsAdmin } from "../utils/auth";
 
-export default function ProductCard({ product = {}, onEdit, onDelete }) {
-  const price = (product?.current_price != null)
-    ? product.current_price
-    : (product?.price != null ? product.price : 0);
-  const formatted = "KES " + Number(price || 0).toLocaleString();
+export default function ProductCard({ product, onView, onEdit, onDelete, isAdmin }) {
+  const admin = (typeof isAdmin === 'boolean') ? isAdmin : authIsAdmin();
 
   return (
-    <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
-      <h3 style={{ margin: "0 0 8px 0" }}>{product?.name}</h3>
-      <p style={{ margin: "0 0 6px 0" }}>{product?.description}</p>
-      <p style={{ margin: "0 0 6px 0", fontWeight: 600 }}>{formatted}</p>
-      <p style={{ margin: "0 0 8px 0", color: "#666" }}>{product?.category_name || product?.category_id || "Category:"}</p>
-      <div style={{ display: "flex", gap: 8 }}>
-        <button type="button" onClick={() => {
-          console.log("[DEV] ProductCard: Edit clicked", product?.id, "onEdit:", typeof onEdit);
-          if (typeof onEdit === "function") onEdit(product?.id);
-        }}>Edit</button>
-
-        <button type="button" onClick={() => {
-          console.log("[DEV] ProductCard: Delete clicked", product?.id, "onDelete:", typeof onDelete);
-          if (typeof onDelete === "function") onDelete(product?.id);
-        }} style={{ background: "#ff6b6b", color: "#fff" }}>
-          Delete
-        </button>
+    <article className="card" style={{display:'flex', flexDirection:'column', gap:8}}>
+      <div style={{position:'relative'}}>
+        <img
+          src={product.image_url || '/images/placeholder.png'}
+          alt={product.name || 'product'}
+          style={{width:'100%', height:160, objectFit:'cover', borderRadius:8}}
+          onError={(e)=> e.currentTarget.src = "/images/placeholder.png"}
+        />
+        {product.badge && (
+          <div style={{
+            position:'absolute', left:8, top:8, background:'#ef4444', color:'#fff',
+            padding:'4px 8px', borderRadius:6, fontSize:12
+          }}>{product.badge}</div>
+        )}
       </div>
-    </div>
+
+      <div style={{display:'flex', flexDirection:'column', gap:4}}>
+        <div style={{fontWeight:700}}>{product.name}</div>
+        {product.category && <div style={{fontSize:12, color:'#6b7280'}}>{product.category}</div>}
+        <div style={{fontWeight:600}}>{typeof product.price === 'number' ? `KES ${product.price.toLocaleString()}` : product.price}</div>
+        <div style={{display:'flex', gap:8, marginTop:6}}>
+          <button className="btn-sm" onClick={()=> onView?.(product)}>View</button>
+          {admin && <>
+            <button className="btn-sm" onClick={()=> onEdit?.(product)}>Edit</button>
+            <button className="btn-sm btn-danger" onClick={()=> onDelete?.(product)}>Delete</button>
+          </>}
+        </div>
+      </div>
+    </article>
   );
 }

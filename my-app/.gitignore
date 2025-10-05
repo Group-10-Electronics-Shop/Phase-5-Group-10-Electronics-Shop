@@ -21,3 +21,12 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+# ignore backup folders and backup files created by editors/scripts
+backup/
+public/images_backup_before_cleanup/
+src.backup*
+*.bak
+*.bak.*
+fig-file.json
+images.json
+project-inspect.txt
