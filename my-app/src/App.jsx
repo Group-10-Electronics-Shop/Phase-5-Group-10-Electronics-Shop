@@ -1,9 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
@@ -18,8 +16,8 @@ import Account from "./pages/Account";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import ProductForm from "./components/ProductForm";
+import AdminProducts from "./pages/AdminProducts"; // ✅ Import admin page
 import NotFound from "./pages/NotFound";
-
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 
@@ -74,7 +72,15 @@ export default function App() {
             }
           />
 
-          {/* Admin only */}
+          {/* ✅ Admin routes */}
+          <Route
+            path="/admin/products"
+            element={
+              <AdminRoute>
+                <AdminProducts />
+              </AdminRoute>
+            }
+          />
           <Route
             path="/products/new"
             element={
