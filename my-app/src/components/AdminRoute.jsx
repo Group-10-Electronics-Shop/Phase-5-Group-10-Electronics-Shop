@@ -1,49 +1,37 @@
-import React, { useEffect, useState } from "react";
-import { getProducts } from "../api";
-import ProductList from "../components/ProductList";
-import AddProductForm from "../components/AddProductForm";
+import React from "react";
 import { useSelector } from "react-redux";
+import { Navigate } from "react-router-dom";
 
-export default function AdminDashboard() {
-  const [products, setProducts] = useState([]);
+function AdminRoute({ children }) {
   const { user } = useSelector((state) => state.auth);
-
-  // detect admin from redux
-  let isAdmin = false;
-  if (user?.role) {
-    const normalized = String(user.role).toLowerCase();
-    isAdmin = ["admin", "superadmin", "manager"].includes(normalized);
+  
+  // Check if user is logged in
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
-
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  const loadProducts = async () => {
-    try {
-      const data = await getProducts();
-      setProducts(data);
-    } catch (err) {
-      console.error("Failed to fetch products", err);
-    }
-  };
-
-  const handleAdd = (newProduct) => {
-    setProducts((prev) => [...prev, newProduct]);
-  };
-
-  const handleDelete = (id) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-  };
-
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
-
-      {/* Show add product form only if admin */}
-      {isAdmin && <AddProductForm onAdd={handleAdd} />}
-
-      <ProductList products={products} onDelete={handleDelete} />
-    </div>
-  );
+  
+  // Check if user has admin or manager role
+  const isAdmin = user.role === "admin" || user.role === "manager";
+  
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <p className="text-gray-600 mb-4">You do not have permission to access this page.</p>
+          <p className="text-sm text-gray-500">Current role: {user.role}</p>
+          <button
+            onClick={() => window.location.href = "/"}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Go to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  return children;
 }
+
+export default AdminRoute;

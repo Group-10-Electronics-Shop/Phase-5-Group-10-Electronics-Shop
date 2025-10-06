@@ -1,49 +1,90 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { loginUser as loginAPI, registerUser as registerAPI } from "../../api";
 
-// Async thunk for login
+// ✅ Fixed admin credentials
+const ADMIN_EMAIL = "admin@shop.com";
+const ADMIN_PASSWORD = "admin123";
+
+// ------------------------------
+// Login thunk
+// ------------------------------
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
-  async ({ email, role }, thunkAPI) => {
+  async ({ email, password }, thunkAPI) => {
     try {
-      // Mocked login: role comes from the dropdown in Login.jsx
-      const user = {
-        id: Math.floor(Math.random() * 1000),
-        name: email.split("@")[0],
-        email,
-        role: role || "user", // if none selected, fallback to user
-      };
+      // ✅ Check for admin credentials first
+      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        const adminUser = {
+          id: 0,
+          first_name: "Admin",
+          last_name: "User",
+          email: ADMIN_EMAIL,
+          role: "admin",
+        };
 
-      // Save user to localStorage
-      localStorage.setItem("user", JSON.stringify(user));
-      return user;
+        // Store fake token and user info
+        localStorage.setItem("token", "admin_token_123");
+        localStorage.setItem("user", JSON.stringify(adminUser));
+
+        return adminUser;
+      }
+
+      // ✅ Regular user login via API
+      const response = await loginAPI(email, password);
+
+      if (response.success && response.data) {
+        const { user, access_token } = response.data;
+
+        localStorage.setItem("token", access_token);
+        localStorage.setItem("user", JSON.stringify(user));
+
+        return user;
+      }
+
+      throw new Error(response.message || "Login failed");
     } catch (err) {
-      return thunkAPI.rejectWithValue("Login failed");
+      const message =
+        err.response?.data?.message || err.message || "Login failed";
+      return thunkAPI.rejectWithValue(message);
     }
   }
 );
 
-// Async thunk for registration
+// ------------------------------
+// Register thunk (users only)
+// ------------------------------
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
-  async ({ name, email }, thunkAPI) => {
+  async (userData, thunkAPI) => {
     try {
-      // Registration always creates a "user"
-      const user = {
-        id: Math.floor(Math.random() * 1000),
-        name,
-        email,
-        role: "user", // locked to user during registration
-      };
+      // ✅ Prevent registration for the admin account
+      if (userData.email === ADMIN_EMAIL) {
+        return thunkAPI.rejectWithValue("Admin account cannot register.");
+      }
 
-      // Save to localStorage
-      localStorage.setItem("user", JSON.stringify(user));
-      return user;
+      const response = await registerAPI(userData);
+
+      if (response.success && response.data) {
+        const { user, access_token } = response.data;
+
+        localStorage.setItem("token", access_token);
+        localStorage.setItem("user", JSON.stringify(user));
+
+        return user;
+      }
+
+      throw new Error(response.message || "Registration failed");
     } catch (err) {
-      return thunkAPI.rejectWithValue("Registration failed");
+      const message =
+        err.response?.data?.message || err.message || "Registration failed";
+      return thunkAPI.rejectWithValue(message);
     }
   }
 );
 
+// ------------------------------
+// Slice setup
+// ------------------------------
 const authSlice = createSlice({
   name: "auth",
   initialState: {
@@ -54,10 +95,13 @@ const authSlice = createSlice({
   reducers: {
     logout: (state) => {
       state.user = null;
+      state.status = "idle";
+      state.error = null;
       localStorage.removeItem("user");
+      localStorage.removeItem("token");
     },
-    setUser: (state, action) => {
-      state.user = action.payload;
+    clearError: (state) => {
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -70,10 +114,11 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.user = action.payload;
+        state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.payload || "Login failed";
+        state.error = action.payload;
       })
       // Register
       .addCase(registerUser.pending, (state) => {
@@ -83,14 +128,14 @@ const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.user = action.payload;
+        state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.payload || "Registration failed";
+        state.error = action.payload;
       });
   },
 });
 
-// Export actions and reducer
-export const { logout, setUser } = authSlice.actions;
+export const { logout, clearError } = authSlice.actions;
 export default authSlice.reducer;

@@ -4,10 +4,10 @@ import { registerUser } from "../features/auth/authSlice";
 import { useNavigate, Link } from "react-router-dom";
 
 export default function Register() {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const role = "user"; // always user when registering
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -15,9 +15,18 @@ export default function Register() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(registerUser({ name, email, password, role }))
+
+    dispatch(
+      registerUser({
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        password,
+      })
+    )
       .unwrap()
-      .then(() => navigate("/profile"));
+      .then(() => navigate("/profile"))
+      .catch((err) => console.error("Registration failed:", err));
   };
 
   return (
@@ -28,10 +37,18 @@ export default function Register() {
         <form className="space-y-4" onSubmit={handleSubmit}>
           <input
             type="text"
-            placeholder="Name"
+            placeholder="First Name"
             className="w-full p-3 border rounded-lg"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Last Name"
+            className="w-full p-3 border rounded-lg"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
             required
           />
           <input
