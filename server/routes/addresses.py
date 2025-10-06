@@ -1,11 +1,18 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from marshmallow import ValidationError
-from server.models.database import db, Address
+from server.models.database import db, Address, UserRole
 from server.schemas import AddressSchema
 from server.utils import success_response, error_response
 
 addresses_bp = Blueprint('addresses', __name__, url_prefix='/api/addresses')
+
+
+# =====================================================
+# 🏠 Helper: check if current user is virtual admin
+# =====================================================
+def is_virtual_admin():
+    return get_jwt_identity() == "admin"
 
 
 @addresses_bp.route('', methods=['GET'])
@@ -13,6 +20,10 @@ addresses_bp = Blueprint('addresses', __name__, url_prefix='/api/addresses')
 def get_addresses():
     """Get current user's addresses"""
     try:
+        if is_virtual_admin():
+            # Admin does not have personal addresses
+            return success_response("Admin does not have personal addresses", [])
+
         current_user_id = get_jwt_identity()
         address_type = request.args.get('type')  # shipping, billing
 
@@ -35,6 +46,9 @@ def get_addresses():
 def get_address(address_id):
     """Get single address by ID"""
     try:
+        if is_virtual_admin():
+            return error_response("Admin does not have addresses", 403)
+
         current_user_id = get_jwt_identity()
 
         address = Address.query.filter_by(id=address_id, user_id=current_user_id).first()
@@ -52,8 +66,10 @@ def get_address(address_id):
 def create_address():
     """Create a new address"""
     try:
-        current_user_id = get_jwt_identity()
+        if is_virtual_admin():
+            return error_response("Admin cannot create addresses", 403)
 
+        current_user_id = get_jwt_identity()
         schema = AddressSchema()
         data = schema.load(request.json)
 
@@ -83,8 +99,10 @@ def create_address():
 def update_address(address_id):
     """Update an address"""
     try:
-        current_user_id = get_jwt_identity()
+        if is_virtual_admin():
+            return error_response("Admin cannot update addresses", 403)
 
+        current_user_id = get_jwt_identity()
         address = Address.query.filter_by(id=address_id, user_id=current_user_id).first()
         if not address:
             return error_response('Address not found', 404)
@@ -120,6 +138,9 @@ def update_address(address_id):
 def delete_address(address_id):
     """Delete an address"""
     try:
+        if is_virtual_admin():
+            return error_response("Admin cannot delete addresses", 403)
+
         current_user_id = get_jwt_identity()
 
         address = Address.query.filter_by(id=address_id, user_id=current_user_id).first()
@@ -141,6 +162,9 @@ def delete_address(address_id):
 def set_default_address(address_id):
     """Set an address as default for its type"""
     try:
+        if is_virtual_admin():
+            return error_response("Admin cannot modify addresses", 403)
+
         current_user_id = get_jwt_identity()
 
         address = Address.query.filter_by(id=address_id, user_id=current_user_id).first()
@@ -162,4 +186,3 @@ def set_default_address(address_id):
     except Exception as e:
         db.session.rollback()
         return error_response(f'Failed to set default address: {str(e)}', 500)
-        

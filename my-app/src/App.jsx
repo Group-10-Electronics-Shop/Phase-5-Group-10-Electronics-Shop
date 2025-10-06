@@ -1,32 +1,62 @@
 import React from "react";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
-import LoginPage from "./pages/Login";
-import Profile from "./pages/Profile";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Profile from "./pages/Profile";
+import Orders from "./pages/Orders";
+import Wishlist from "./pages/Wishlist";
+import AdminDashboard from "./pages/AdminDashboard";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Account from "./pages/Account";
+import NotFound from "./pages/NotFound";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import AdminRoute from "./components/AdminRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-export default function App(){
+export default function App() {
   return (
-    <div>
-      <nav style={{padding:12, borderBottom:"1px solid #eee"}}>
-        <Link to="/">Home</Link>{" | "}
-        <Link to="/products">Products</Link>{" | "}
-        <Link to="/profile">Profile</Link>{" | "}
-        <Link to="/login">Login</Link>{" | "}
-        <Link to="/register">Register</Link>
-      </nav>
-      <Routes>
-        <Route path="/" element={<Home/>} />
-        <Route path="/products" element={<Products/>} />
-        <Route path="/products/:id" element={<ProductDetail/>} />
-        <Route path="/login" element={<LoginPage/>} />
-        <Route path="/register" element={<Register/>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile/></ProtectedRoute>} />
-        <Route path="*" element={<div style={{padding:20}}>Not found</div>} />
-      </Routes>
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <div className="flex-grow">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          
+          <Route path="/profile" element={
+            <ProtectedRoute><Profile /></ProtectedRoute>
+          } />
+          <Route path="/orders" element={
+            <ProtectedRoute><Orders /></ProtectedRoute>
+          } />
+          <Route path="/wishlist" element={
+            <ProtectedRoute><Wishlist /></ProtectedRoute>
+          } />
+          <Route path="/account" element={
+            <ProtectedRoute><Account /></ProtectedRoute>
+          } />
+          
+          <Route path="/admin" element={
+            <AdminRoute><AdminDashboard /></AdminRoute>
+          } />
+          
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </div>
+      <Footer />
     </div>
   );
 }

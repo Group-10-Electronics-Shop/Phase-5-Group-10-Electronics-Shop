@@ -6,11 +6,16 @@ from .database import (
     Category,
     Order,
     OrderItem,
+    OrderStatus,
+    PaymentStatus,
     CartItem,
     Address,
     WishlistItem,
     ProductReview,
     Coupon,
+    CouponStatus,
+    DiscountType,
+    ReviewStatus,
     DatabaseUtils
 )
 
@@ -22,10 +27,15 @@ __all__ = [
     'Category',
     'Order',
     'OrderItem',
+    'OrderStatus',
+    'PaymentStatus',
     'CartItem',
     'Address',
     'WishlistItem',
     'ProductReview',
     'Coupon',
+    'CouponStatus',
+    'DiscountType',
+    'ReviewStatus',
     'DatabaseUtils'
 ]
