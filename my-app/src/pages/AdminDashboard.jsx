@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ProductList from "../components/ProductList";
-import { fetchProducts, deleteProduct, updateProduct, createProduct } from "../api/product";
+import { fetchProducts, deleteProduct, updateProduct, createProduct } from "../api";
 
 function AdminDashboard() {
   const [products, setProducts] = useState([]);
