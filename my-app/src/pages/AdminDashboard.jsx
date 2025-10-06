@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { fetchProducts, deleteProduct, updateProduct, createProduct } from "../api";
+import ProductList from "../components/ProductList";
+import { fetchProducts, deleteProduct, updateProduct, createProduct } from "../api/product";
 
 function AdminDashboard() {
   const [products, setProducts] = useState([]);
