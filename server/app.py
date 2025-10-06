@@ -5,17 +5,17 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 
-from .config import config
-from .models.database import db
-from .models import *
+from config import config
+from models.database import db
+from models import *
 
-from .routes.auth import auth_bp
-from .routes.products import products_bp
-from .routes.categories import categories_bp
-from .routes.cart import cart_bp
-from .routes.orders import orders_bp
-from .routes.addresses import addresses_bp
-from .routes.admin import admin_bp
+from routes.auth import auth_bp
+from routes.products import products_bp
+from routes.categories import categories_bp
+from routes.cart import cart_bp
+from routes.orders import orders_bp
+from routes.addresses import addresses_bp
+from routes.admin import admin_bp
 
 
 def create_app(config_name=None):
