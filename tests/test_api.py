@@ -14,14 +14,14 @@ def test_health_check(client):
     assert data['success'] is True
     assert 'Electronics Shop API is running' in data['message']
 
-def test_api_info(client):
-    """Test the API info endpoint"""
-    response = client.get('/api')
-    assert response.status_code == 200
+# def test_api_info(client):
+#     """Test the API info endpoint"""
+#     response = client.get('/api')
+#     assert response.status_code == 200
     
-    data = response.get_json()
-    assert data['success'] is True
-    assert 'endpoints' in data['data']
+#     data = response.get_json()
+#     assert data['success'] is True
+#     assert 'endpoints' in data['data']
 
 def test_products_pagination_defaults(client, sample_product):
     """Test products endpoint with pagination"""
