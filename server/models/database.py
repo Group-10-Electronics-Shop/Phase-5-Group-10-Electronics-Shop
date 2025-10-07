@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, and_, or_, Base
 from sqlalchemy.ext.hybrid import hybrid_property
 import enum
 
