@@ -22,8 +22,8 @@ flask = "==2.3.3"
 flask-migrate = "==4.0.5"
 marshmallow = "==3.20.1"
 psycopg2-binary = "==2.9.9"
-psycopg = {extras = ["binary"], version = "==3.1.19"}
 flask-marshmallow = "==0.15.0"
+psycopg = {extras = ["binary"], version = "==3.2.10"}
 
 [dev-packages]
 
