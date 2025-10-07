@@ -70,9 +70,9 @@ def create_app(config_name=None):
 
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
-    app.register_blueprint(products_bp, url_prefix="/api/products")
+    app.register_blueprint(products_bp)
     app.register_blueprint(categories_bp, url_prefix="/api/categories")
-    app.register_blueprint(cart_bp, url_prefix="/api/cart")
+    app.register_blueprint(cart_bp)
     app.register_blueprint(orders_bp, url_prefix="/api/orders")
     app.register_blueprint(addresses_bp, url_prefix="/api/addresses")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
@@ -85,11 +85,8 @@ def create_app(config_name=None):
                 "success": True,
                 "message": "Electronics Shop API",  
                 "version": "1.0.0",
-                "endpoints": {
-                    "products": "/api/products",
-                    "auth": "/api/auth/login",
-                    "cart": "/api/cart"
-                }
+                "status": "running",
+                
             }
         )
 
