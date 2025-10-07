@@ -83,8 +83,13 @@ def create_app(config_name=None):
         return jsonify(
             {
                 "success": True,
-                "message": "Electronics Shop API",
+                "message": "Electronics Shop API",  
                 "version": "1.0.0",
+                "endpoints": {
+                    "products": "/api/products",
+                    "auth": "/api/auth/login",
+                    "cart": "/api/cart"
+                }
             }
         )
 
