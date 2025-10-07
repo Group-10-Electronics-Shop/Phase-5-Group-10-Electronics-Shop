@@ -7,7 +7,7 @@ from server.models.database import db, User, Product, Order, Category, UserRole,
 from server.schemas import AdminUserCreateSchema, PaginationSchema
 from server.utils import success_response, error_response, admin_required, paginate_query
 
-admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
+admin_bp = Blueprint('admin', __name__)
 
 # User Management
 @admin_bp.route('/users', methods=['GET'])

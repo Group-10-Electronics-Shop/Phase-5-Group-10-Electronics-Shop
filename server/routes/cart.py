@@ -5,7 +5,7 @@ from server.models.database import db, CartItem, Product
 from server.schemas import CartItemSchema
 from server.utils import success_response, error_response, validate_stock_quantity, ValidationError as CustomValidationError
 
-cart_bp = Blueprint('cart', __name__, url_prefix='/api/cart')
+cart_bp = Blueprint('cart', __name__)
 
 @cart_bp.route('', methods=['GET'])
 @jwt_required()

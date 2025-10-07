@@ -6,7 +6,7 @@ from server.schemas import UserRegistrationSchema, UserLoginSchema, UserUpdateSc
 from server.utils import success_response, error_response
 import os
 
-auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
+auth_bp = Blueprint('auth', __name__)
 
 # ===========================
 # 🔐 Fixed Admin Credentials
