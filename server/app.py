@@ -109,6 +109,10 @@ def create_app(config_name=None):
                 }
             }
         )
+    @app.route("/api/health", methods=["GET"])
+    def health_check():
+        return jsonify(success=True, message="API running", version="1.0.0")
+
     # Error handlers
     @app.errorhandler(404)
     def not_found(error):
