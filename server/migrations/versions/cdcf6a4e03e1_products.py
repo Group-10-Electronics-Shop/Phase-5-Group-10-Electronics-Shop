@@ -143,19 +143,8 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id', 'product_id', name='unique_user_product_cart')
     )
-    op.create_table('coupon_usage',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('coupon_id', sa.Integer(), nullable=False),
-    sa.Column('order_id', sa.Integer(), nullable=False),
-    sa.Column('discount_amount', sa.Numeric(precision=10, scale=2), nullable=False),
-    sa.Column('used_at', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['coupon_id'], ['coupons.id'], ),
-    sa.ForeignKeyConstraint(['order_id'], ['orders.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('user_id', 'coupon_id', 'order_id', name='unique_user_coupon_order')
-    )
+    
+    
     op.create_table('order_items',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('order_id', sa.Integer(), nullable=False),
@@ -196,6 +185,19 @@ def upgrade():
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id', 'product_id', name='unique_user_product_wishlist')
+    )
+    op.create_table('coupon_usage',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('coupon_id', sa.Integer(), nullable=False),
+    sa.Column('order_id', sa.Integer(), nullable=False),
+    sa.Column('discount_amount', sa.Numeric(precision=10, scale=2), nullable=False),
+    sa.Column('used_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['coupon_id'], ['coupons.id'], ),
+    sa.ForeignKeyConstraint(['order_id'], ['orders.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id', 'coupon_id', 'order_id', name='unique_user_coupon_order')
     )
     # ### end Alembic commands ###
 
