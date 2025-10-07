@@ -69,13 +69,13 @@ def create_app(config_name=None):
     )
 
     # Register blueprints
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(products_bp)
-    app.register_blueprint(categories_bp)
-    app.register_blueprint(cart_bp)
-    app.register_blueprint(orders_bp)
-    app.register_blueprint(addresses_bp)
-    app.register_blueprint(admin_bp)
+    app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(products_bp, url_prefix="/api/products")
+    app.register_blueprint(categories_bp, url_prefix="/api/categories")
+    app.register_blueprint(cart_bp, url_prefix="/api/cart")
+    app.register_blueprint(orders_bp, url_prefix="/api/orders")
+    app.register_blueprint(addresses_bp, url_prefix="/api/addresses")
+    app.register_blueprint(admin_bp, url_prefix="/api/admin")
 
     # Root endpoint
     @app.route("/", methods=["GET"])
@@ -90,10 +90,25 @@ def create_app(config_name=None):
             }
         )
 
-    @app.route("/api/health", methods=["GET"])
-    def health_check():
-        return jsonify(success=True, message="API running", version="1.0.0")
-
+    @app.route("/api", methods=["GET"])
+    def api_info():
+        return jsonify(
+            {
+                "success": True,
+                "message": "Electronics Shop API",
+                "version": "1.0.0",
+                "endpoints": {
+                    "auth": "/api/auth",
+                    "products": "/api/products",
+                    "categories": "/api/categories",
+                    "cart": "/api/cart",
+                    "orders": "/api/orders",
+                    "addresses": "/api/addresses",
+                    "admin": "/api/admin",
+                    "health": "/api/health"
+                }
+            }
+        )
     # Error handlers
     @app.errorhandler(404)
     def not_found(error):
