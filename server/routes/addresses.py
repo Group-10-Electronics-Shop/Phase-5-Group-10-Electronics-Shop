@@ -1,9 +1,9 @@
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from marshmallow import ValidationError
-from server.models.database import db, Address, UserRole
-from server.schemas import AddressSchema
-from server.utils import success_response, error_response
+from models.database import db, Address, UserRole
+from schemas import AddressSchema
+from utils import success_response, error_response
 
 addresses_bp = Blueprint('addresses', __name__, url_prefix='/api/addresses')
 

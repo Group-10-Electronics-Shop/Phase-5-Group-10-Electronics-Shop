@@ -2,9 +2,9 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from marshmallow import ValidationError
 from datetime import datetime
-from server.models.database import db, Order, OrderItem, CartItem, Product, Address, OrderStatus, PaymentStatus
-from server.schemas import OrderCreateSchema, OrderUpdateSchema, PaginationSchema
-from server.utils import (success_response, error_response, admin_required, manager_required, 
+from models.database import db, Order, OrderItem, CartItem, Product, Address, OrderStatus, PaymentStatus
+from schemas import OrderCreateSchema, OrderUpdateSchema, PaginationSchema
+from utils import (success_response, error_response, admin_required, manager_required, 
                   paginate_query, generate_order_number, validate_stock_quantity, 
                   update_product_stock, calculate_tax, calculate_shipping, ValidationError as CustomValidationError)
 

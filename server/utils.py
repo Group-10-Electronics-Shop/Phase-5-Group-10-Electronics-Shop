@@ -19,7 +19,7 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # Import here to avoid circular imports
-        from server.models.database import User, UserRole
+        from models.database import User, UserRole
         
         verify_jwt_in_request()
         current_user_id = get_jwt_identity()
@@ -36,7 +36,7 @@ def manager_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # Import here to avoid circular imports
-        from server.models.database import User, UserRole
+        from models.database import User, UserRole
         
         verify_jwt_in_request()
         current_user_id = get_jwt_identity()
@@ -108,7 +108,7 @@ def validate_stock_quantity(product, requested_quantity):
 
 def update_product_stock(product, quantity_sold):
     """Update product stock after sale"""
-    from server.models.database import db
+    from models.database import db
     
     product.stock_quantity -= quantity_sold
     product.sales_count += quantity_sold
@@ -116,7 +116,7 @@ def update_product_stock(product, quantity_sold):
 
 def restore_product_stock(product, quantity_restored):
     """Restore product stock (e.g., when order is cancelled)"""
-    from server.models.database import db
+    from models.database import db
     
     product.stock_quantity += quantity_restored
     product.sales_count = max(0, product.sales_count - quantity_restored)

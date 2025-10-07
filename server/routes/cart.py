@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from marshmallow import ValidationError
-from server.models.database import db, CartItem, Product
-from server.schemas import CartItemSchema
-from server.utils import success_response, error_response, validate_stock_quantity, ValidationError as CustomValidationError
+from models.database import db, CartItem, Product
+from schemas import CartItemSchema
+from utils import success_response, error_response, validate_stock_quantity, ValidationError as CustomValidationError
 
 cart_bp = Blueprint('cart', __name__, url_prefix='/api/cart')
 
