@@ -1,5 +1,5 @@
 from marshmallow import Schema, fields, validate, validates, ValidationError
-from models.database import UserRole, OrderStatus, PaymentStatus
+from server.models.database import UserRole, OrderStatus, PaymentStatus
 
 class UserRegistrationSchema(Schema):
     email = fields.Email(required=True)
