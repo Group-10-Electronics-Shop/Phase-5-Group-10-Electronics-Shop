@@ -11,7 +11,8 @@ def test_health_check(client):
     
     data = response.get_json()
     assert data['success'] is True
-    assert data['message'] == 'Electronics Shop API'
+    assert data['message'] == 'Electronics Shop API is running'  # match the endpoint
+
 
 
 # def test_api_info(client):
