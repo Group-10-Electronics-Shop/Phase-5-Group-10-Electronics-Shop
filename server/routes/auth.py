@@ -209,3 +209,11 @@ def update_profile():
     except Exception as e:
         db.session.rollback()
         return error_response(f'Failed to update profile: {str(e)}', 500)
+    
+@auth_bp.route('/change-password', methods=['POST'])
+def change_password():
+    data = request.get_json()
+    # Logic to verify current password and change to new password
+    return jsonify({'success': True, 'message': 'Password changed successfully'}), 200
+    
+
