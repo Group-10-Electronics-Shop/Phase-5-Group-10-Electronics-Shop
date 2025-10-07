@@ -6,13 +6,13 @@ import pytest
 import json
 
 def test_health_check(client):
-    """Test the health check endpoint"""
     response = client.get('/api/health')
     assert response.status_code == 200
     
     data = response.get_json()
     assert data['success'] is True
-    assert 'API running' in data['message']
+    assert data['message'] == 'Electronics Shop API'
+
 
 # def test_api_info(client):
 #     """Test the API info endpoint"""
