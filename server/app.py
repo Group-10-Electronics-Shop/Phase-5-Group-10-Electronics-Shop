@@ -69,13 +69,13 @@ def create_app(config_name=None):
     )
 
     # Register blueprints
-    app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(auth_bp)
     app.register_blueprint(products_bp)
-    app.register_blueprint(categories_bp, url_prefix="/api/categories")
+    app.register_blueprint(categories_bp)
     app.register_blueprint(cart_bp)
-    app.register_blueprint(orders_bp, url_prefix="/api/orders")
-    app.register_blueprint(addresses_bp, url_prefix="/api/addresses")
-    app.register_blueprint(admin_bp, url_prefix="/api/admin")
+    app.register_blueprint(orders_bp)
+    app.register_blueprint(addresses_bp)
+    app.register_blueprint(admin_bp)
 
     # Root endpoint
     @app.route("/", methods=["GET"])
