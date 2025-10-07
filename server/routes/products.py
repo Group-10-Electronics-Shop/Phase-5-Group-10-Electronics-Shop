@@ -3,8 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from marshmallow import ValidationError
 from sqlalchemy import or_, and_
 from server.models.database import db, Product, Category
-from schemas import ProductCreateSchema, ProductUpdateSchema, ProductFilterSchema
-from utils import success_response, error_response, admin_required, paginate_query, generate_sku
+from server.schemas import ProductCreateSchema, ProductUpdateSchema, ProductFilterSchema
+from server.utils import success_response, error_response, admin_required, paginate_query, generate_sku
 
 products_bp = Blueprint('products', __name__, url_prefix='/api/products')
 
