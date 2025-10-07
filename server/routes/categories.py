@@ -5,7 +5,7 @@ from server.models.database import db, Category
 from server.schemas import CategorySchema
 from server.utils import success_response, error_response, admin_required
 
-categories_bp = Blueprint('categories', __name__)
+categories_bp = Blueprint('categories', __name__, url_prefix='/api/categories')
 
 @categories_bp.route('', methods=['GET'])
 def get_categories():

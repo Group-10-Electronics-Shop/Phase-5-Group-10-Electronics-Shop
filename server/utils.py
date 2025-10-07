@@ -19,7 +19,7 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # Import here to avoid circular imports
-        from models.database import User, UserRole
+        from .models.database import User, UserRole
         
         verify_jwt_in_request()
         current_user_id = get_jwt_identity()
