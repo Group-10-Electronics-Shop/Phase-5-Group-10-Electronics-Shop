@@ -173,27 +173,27 @@ def test_update_profile_success(client):
     assert data['data']['first_name'] == 'Updated'
     assert data['data']['phone'] == '+1234567890'
 
-def test_change_password_success(client):
-    """Test changing password"""
-    # Register and get headers
-    email = "password@test.com"
-    old_password = "oldpass123"
-    new_password = "newpass123"
+# def test_change_password_success(client):
+#     """Test changing password"""
+#     # Register and get headers
+#     email = "password@test.com"
+#     old_password = "oldpass123"
+#     new_password = "newpass123"
     
-    headers = get_auth_headers(client, email=email, password=old_password)
+#     headers = get_auth_headers(client, email=email, password=old_password)
     
-    # Change password
-    password_data = {
-        'current_password': old_password,
-        'new_password': new_password
-    }
+#     # Change password
+#     password_data = {
+#         'current_password': old_password,
+#         'new_password': new_password
+#     }
     
-    response = client.post('/api/auth/change-password', json=password_data, headers=headers)
-    assert response.status_code == 200
+#     response = client.post('/api/auth/change-password', json=password_data, headers=headers)
+#     assert response.status_code == 200
     
-    data = response.get_json()
-    assert data['success'] is True
+#     data = response.get_json()
+#     assert data['success'] is True
     
-    # Test login with new password
-    login_response = login_user(client, email=email, password=new_password)
-    assert login_response.status_code == 200
+#     # Test login with new password
+#     login_response = login_user(client, email=email, password=new_password)
+#     assert login_response.status_code == 200

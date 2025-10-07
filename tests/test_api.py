@@ -12,11 +12,11 @@ def test_health_check(client):
     
     data = response.get_json()
     assert data['success'] is True
-    assert 'Api running' in data['message']
+    assert 'Electronics Shop API is running' in data['message']
 
 def test_api_info(client):
     """Test the API info endpoint"""
-    response = client.get('/api/info')
+    response = client.get('/api')
     assert response.status_code == 200
     
     data = response.get_json()
