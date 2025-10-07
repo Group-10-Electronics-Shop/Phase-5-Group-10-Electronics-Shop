@@ -3,8 +3,8 @@ Production-ready Flask application runner
 """
 
 import os
-from server.app import create_app
-from server.config import config_by_name
+from .app import create_app
+from .config import config_by_name
 
 # Get the environment from environment variable
 config_name = os.environ.get('FLASK_ENV', 'production')

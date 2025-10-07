@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import ProductList from "../components/ProductList";
 import { fetchProducts, deleteProduct, updateProduct, createProduct } from "../api";
 
 function AdminDashboard() {

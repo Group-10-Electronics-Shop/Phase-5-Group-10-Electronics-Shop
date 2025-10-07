@@ -5,10 +5,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+basedir = os.path.abspath(os.path.dirname(__file__))
+
 class Config:
     # General app settings
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_DATABASE_URI = (
+        os.getenv("DATABASE_URL")
+        or f"sqlite:///{os.path.join(basedir, 'app.db')}"
+    )
 
     # JWT settings
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "jwt-secret-key")

@@ -311,10 +311,27 @@ phase-5-group-10-electronics-shop/
 │   ├── migrations/              # Database migrations
 │   ├── config.py                # Configuration settings
 │   ├── app.py                   # Flask application factory
+│   ├── run.py                   # Flask
 │   ├── seed.py                  # Database seeding script
+│   ├── runtime.txt              # Render python 3.12 
 │   └── requirements.txt         # Python dependencies
 │
 ├── .gitignore
+├── .python-version
+├── CONTRIBUTING.md
+├── index.html 
+├── eslint.config.js 
+├── LICENSE 
+├── package-lock.json 
+├── package.json 
+├── Pipfile 
+├── Pipfile.lock 
+├── postcss.config.js 
+├── README.md 
+├── runtime.txt 
+├── test.db 
+├── tailwind.config.js 
+├── vite.config.js
 ├── README.md
 └── LICENSE
 ```
@@ -527,18 +544,29 @@ Authorization: Bearer JWT_TOKEN
 
 This application is deployed on Render with the following configuration:
 
-#### Frontend Deployment
-
-- **Service Type:** Static Site
-- **Build Command:** `cd client && npm install && npm run build`
-- **Publish Directory:** `client/build`
-
 #### Backend Deployment
 
 - **Service Type:** Web Service
 - **Build Command:** `cd server && pip install -r requirements.txt`
 - **Start Command:** `cd server && gunicorn app:app`
 - **Environment Variables:** Set in Render dashboard
+
+### Live Application
+
+**🔗 URL:** [https://shopatelec.netlify.app/](https://shopatelec.netlify.app/)
+
+**Status:** ✅ Live and operational
+
+### Deployment Platform: Netlify
+
+This application is deployed on Render with the following configuration:
+
+#### Frontend Deployment
+
+- **Service Type:** Static Site
+- **Build Command:** `cd client && npm install && npm run build`
+- **Publish Directory:** `client/build`
+
 
 #### Database
 

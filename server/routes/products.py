@@ -6,7 +6,7 @@ from server.models.database import db, Product, Category
 from server.schemas import ProductCreateSchema, ProductUpdateSchema, ProductFilterSchema
 from server.utils import success_response, error_response, admin_required, paginate_query, generate_sku
 
-products_bp = Blueprint('products', __name__, url_prefix='/api/products')
+products_bp = Blueprint('products', __name__)
 
 @products_bp.route('', methods=['GET'])
 def get_products():

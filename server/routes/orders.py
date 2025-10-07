@@ -8,7 +8,7 @@ from server.utils import (success_response, error_response, admin_required, mana
                   paginate_query, generate_order_number, validate_stock_quantity, 
                   update_product_stock, calculate_tax, calculate_shipping, ValidationError as CustomValidationError)
 
-orders_bp = Blueprint('orders', __name__, url_prefix='/api/orders')
+orders_bp = Blueprint('orders', __name__)
 
 @orders_bp.route('', methods=['GET'])
 @jwt_required()

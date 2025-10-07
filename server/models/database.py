@@ -12,6 +12,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 import enum
 
 db = SQLAlchemy()
+Base = db.Model
 
 # Enums
 class UserRole(enum.Enum):
@@ -552,7 +553,7 @@ def create_tables():
         meta = Base.metadata  # if Base is defined in this file
     except Exception:
         try:
-            from server.models import Base as _Base
+            from models import Base as _Base
             meta = _Base.metadata
         except Exception as exc:
             raise RuntimeError("Could not find SQLAlchemy Base to create tables") from exc
@@ -573,7 +574,7 @@ def drop_tables():
     try:
         meta = Base.metadata
     except Exception:
-        from server.models import Base as _Base
+        from models import Base as _Base
         meta = _Base.metadata
     engine = create_engine(db_url)
     meta.drop_all(engine)

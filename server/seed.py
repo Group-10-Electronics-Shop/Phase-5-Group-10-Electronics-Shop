@@ -5,8 +5,8 @@ Run this script to populate the database with sample data
 
 import json
 from decimal import Decimal
-from server.app import create_app
-from server.models import db, User, Category, Product, UserRole
+from app import create_app
+from models import db, User, Category, Product, UserRole
 
 
 def seed_database():

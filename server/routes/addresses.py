@@ -5,7 +5,7 @@ from server.models.database import db, Address, UserRole
 from server.schemas import AddressSchema
 from server.utils import success_response, error_response
 
-addresses_bp = Blueprint('addresses', __name__, url_prefix='/api/addresses')
+addresses_bp = Blueprint('addresses', __name__)
 
 
 # =====================================================

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://phase-5-group-10-electronics-shop-18.onrender.com/api";
 
 // 🔐 Hardcoded admin credentials
 const ADMIN_EMAIL = "admin@shop.com";

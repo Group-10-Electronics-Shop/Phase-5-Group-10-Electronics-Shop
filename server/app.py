@@ -47,7 +47,7 @@ def create_app(config_name=None):
     # ✅ FIXED CORS: Added 5174 origin and clarified defaults
     origins_env = os.getenv(
         "CORS_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000"
+        "http://localhost:5173,https://shopatelec.netlify.app/,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000"
     )
     origins = [o.strip() for o in origins_env.split(",") if o.strip()]
 
@@ -83,14 +83,40 @@ def create_app(config_name=None):
         return jsonify(
             {
                 "success": True,
-                "message": "Electronics Shop API",
+                "message": "Electronics Shop API",  
                 "version": "1.0.0",
+                "status": "running",
+                
             }
         )
 
+    @app.route("/api", methods=["GET"])
+    def api_info():
+        return jsonify(
+            {
+                "success": True,
+                "message": "Electronics Shop API",
+                "version": "1.0.0",
+                "endpoints": {
+                    "auth": "/api/auth",
+                    "products": "/api/products",
+                    "categories": "/api/categories",
+                    "cart": "/api/cart",
+                    "orders": "/api/orders",
+                    "addresses": "/api/addresses",
+                    "admin": "/api/admin",
+                    "health": "/api/health"
+                }
+            }
+        )
     @app.route("/api/health", methods=["GET"])
     def health_check():
-        return jsonify(success=True, message="API running", version="1.0.0")
+        return jsonify({
+            "success": True,
+            "message": "Electronics Shop API is running",
+            "version": "1.0.0",
+            "status": "running"
+        })
 
     # Error handlers
     @app.errorhandler(404)
