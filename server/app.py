@@ -113,7 +113,7 @@ def create_app(config_name=None):
     def health_check():
         return jsonify({
             "success": True,
-            "message": "Electronics Shop API",
+            "message": "Electronics Shop API is running",
             "version": "1.0.0",
             "status": "running"
         })
